@@ -11,7 +11,7 @@ html_content = f'''<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>台股Dashboard</title>
+  <title>Stock Review</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Plotly.js CDN -->
@@ -61,25 +61,25 @@ html_content = f'''<!DOCTYPE html>
   <header class="bg-slate-900/90 border-b border-slate-800 px-6 py-3 flex items-center justify-between shrink-0">
     <div class="flex items-center gap-3">
       <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white font-black text-lg shadow-lg shadow-cyan-500/20">
-        📈
+        📊
       </div>
       <div>
         <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
-          台股Dashboard <span class="text-xs font-semibold px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">Stock Review</span>
+          Stock Review <span class="text-xs font-semibold px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">個股技術分析</span>
         </h1>
         <p class="text-xs text-slate-400">標準台式 KD (9,3,3) 遞迴演算法 · 雙軌數據交叉校驗 · 6大操作策略矩陣</p>
       </div>
     </div>
 
     <div class="flex items-center gap-3">
+      <a href="/" class="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-xs font-bold text-white shadow transition-all flex items-center gap-1.5">
+        <span>📈</span> 前往 台股Dashboard
+      </a>
       <button onclick="openModal()" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-300 border border-slate-700 transition-all flex items-center gap-1.5">
         <span>📋</span> KD 策略矩陣
       </button>
       <a href="KD策略.csv" download class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-300 border border-slate-700 transition-all flex items-center gap-1.5">
         <span>💾</span> 下載 KD策略.csv
-      </a>
-      <a href="http://localhost:8501" target="_blank" class="px-3.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-xs font-bold text-white shadow-md shadow-blue-600/30 transition-all flex items-center gap-1.5">
-        <span>🚀</span> Streamlit 即時伺服器
       </a>
     </div>
   </header>
@@ -569,10 +569,10 @@ html_content = f'''<!DOCTYPE html>
 </html>
 '''
 
-with open('stock_review.html', 'w', encoding='utf-8') as f:
+with open('stock-review.html', 'w', encoding='utf-8') as f:
     f.write(html_content)
 
-with open('index.html', 'w', encoding='utf-8') as f:
+with open(r'C:\Users\Charles0\Documents\AG_MS\public\stock-review.html', 'w', encoding='utf-8') as f:
     f.write(html_content)
 
-print("Generated stock_review.html and index.html successfully!")
+print("Generated stock-review.html successfully!")
