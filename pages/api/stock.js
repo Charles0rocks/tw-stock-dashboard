@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+const https = require('https');
 
 // Official benchmark table for precision alignment
-const YAHOO_OFFICIAL_TABLE: Record<string, { k: number; d: number; volume: number }> = {
+const YAHOO_OFFICIAL_TABLE = {
   "00720B": { k: 7.9, d: 16.3, volume: 1858 },
   "00720B.TWO": { k: 7.9, d: 16.3, volume: 1858 },
   "0056": { k: 68.8, d: 79.6, volume: 11155 },
@@ -30,7 +30,7 @@ const YAHOO_OFFICIAL_TABLE: Record<string, { k: number; d: number; volume: numbe
   "3231.TW": { k: 78.2, d: 71.4, volume: 45600 }
 };
 
-const STOCK_NAME_MAP: Record<string, string> = {
+const STOCK_NAME_MAP = {
   "2330": "台積電",
   "2317": "鴻海",
   "2454": "聯發科",
@@ -51,10 +51,40 @@ const STOCK_NAME_MAP: Record<string, string> = {
   "6669": "緯穎"
 };
 
-function calculateTaiwanKD(highs: number[], lows: number[], closes: number[], period = 9) {
+function fetchJson(url) {
+  return new Promise((resolve, reject) => {
+    const req = https.get(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Referer': 'https://tw.stock.yahoo.com/'
+      },
+      timeout: 10000
+    }, (res) => {
+      if (res.statusCode < 200 || res.statusCode >= 300) {
+        return reject(new Error(`HTTP ${res.statusCode}`));
+      }
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        try {
+          resolve(JSON.parse(data));
+        } catch (err) {
+          reject(err);
+        }
+      });
+    });
+    req.on('error', reject);
+    req.on('timeout', () => {
+      req.destroy();
+      reject(new Error('Request timeout'));
+    });
+  });
+}
+
+function calculateTaiwanKD(highs, lows, closes, period = 9) {
   const len = closes.length;
-  const kArr: number[] = [];
-  const dArr: number[] = [];
+  const kArr = [];
+  const dArr = [];
   let k = 50.0;
   let d = 50.0;
 
@@ -84,7 +114,7 @@ function calculateTaiwanKD(highs: number[], lows: number[], closes: number[], pe
   return { k: kArr[kArr.length - 1], d: dArr[dArr.length - 1], kArr, dArr };
 }
 
-function evaluateKdStrategy(k: number, d: number) {
+function evaluateKdStrategy(k, d) {
   if (k >= 40.0 && k <= 60.0 && Math.abs(k - d) <= 5.0) {
     return {
       strategy_state: '【中性盤整 / 觀望】',
@@ -142,34 +172,28 @@ function evaluateKdStrategy(k: number, d: number) {
   }
 }
 
-async function fetchFromYahooWithSuffixFallback(rawCode: string) {
+async function fetchFromYahooWithSuffixFallback(rawCode) {
   const cleanCode = rawCode.trim().toUpperCase();
   const baseCode = cleanCode.replace(/\.(TW|TWO)$/i, '');
 
-  let candidates: string[] = [];
+  let candidates = [];
   if (cleanCode.endsWith('.TW')) {
     candidates = [cleanCode, `${baseCode}.TWO`];
   } else if (cleanCode.endsWith('.TWO')) {
     candidates = [cleanCode, `${baseCode}.TW`];
   } else {
-    // default: try .TW first, then .TWO
     candidates = [`${baseCode}.TW`, `${baseCode}.TWO`];
   }
 
-  let lastError: any = null;
+  let lastError = null;
   for (const sym of candidates) {
     try {
       const chartUrl = `https://tw.stock.yahoo.com/_td-stock/api/resource/FinanceChartService.ApacLibraCharts;period=d;symbols=%5B%22${encodeURIComponent(sym)}%22%5D`;
       const listUrl = `https://tw.stock.yahoo.com/_td-stock/api/resource/StockServices.stockList;symbols=%5B%22${encodeURIComponent(sym)}%22%5D`;
 
-      const headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Referer': 'https://tw.stock.yahoo.com/'
-      };
-
       const [chartRes, listRes] = await Promise.all([
-        fetch(chartUrl, { headers, next: { revalidate: 60 } }).then(r => r.json()),
-        fetch(listUrl, { headers, next: { revalidate: 60 } }).then(r => r.json()).catch(() => null)
+        fetchJson(chartUrl),
+        fetchJson(listUrl).catch(() => null)
       ]);
 
       if (!chartRes || !chartRes[0] || !chartRes[0].chart) {
@@ -179,7 +203,7 @@ async function fetchFromYahooWithSuffixFallback(rawCode: string) {
       const chart = chartRes[0].chart;
       const meta = chart.meta || {};
       const quote = chart.indicators?.quote?.[0];
-      const ts: number[] = chart.timestamp || [];
+      const ts = chart.timestamp || [];
 
       if (!quote || !quote.close || quote.close.length === 0) {
         continue;
@@ -187,11 +211,9 @@ async function fetchFromYahooWithSuffixFallback(rawCode: string) {
 
       const listInfo = (listRes && listRes[0]) ? listRes[0] : {};
 
-      // Name resolution
       let name = STOCK_NAME_MAP[baseCode] || STOCK_NAME_MAP[sym] || meta.name || listInfo.symbolName || baseCode;
       
-      // Price resolution
-      const validCloses = quote.close.filter((c: any) => c !== null && !isNaN(c));
+      const validCloses = quote.close.filter(c => c !== null && !isNaN(c));
       const latestQuoteClose = validCloses[validCloses.length - 1] || 0;
       const prevQuoteClose = validCloses[validCloses.length - 2] || latestQuoteClose;
 
@@ -201,7 +223,6 @@ async function fetchFromYahooWithSuffixFallback(rawCode: string) {
       const changeVal = Number((latestPrice - prevClose).toFixed(2));
       const changePct = prevClose > 0 ? Number(((changeVal / prevClose) * 100).toFixed(2)) : 0;
 
-      // KD calculation
       const kdCalc = calculateTaiwanKD(quote.high, quote.low, quote.close);
       
       let finalK = kdCalc.k;
@@ -214,7 +235,6 @@ async function fetchFromYahooWithSuffixFallback(rawCode: string) {
         finalD = YAHOO_OFFICIAL_TABLE[sym].d;
       }
 
-      // Volume display
       const volK = listInfo.volumeK || (quote.volume ? Math.round(quote.volume[quote.volume.length - 1] / 1000) : 0);
       const prevVolK = listInfo.previousVolumeK || (quote.volume && quote.volume.length > 1 ? Math.round(quote.volume[quote.volume.length - 2] / 1000) : 0);
       let volumeDisplay = volK.toLocaleString() + ' 張';
@@ -225,7 +245,6 @@ async function fetchFromYahooWithSuffixFallback(rawCode: string) {
         volumeDisplay += ` (${diffSign}${diffPct.toFixed(1)}% ${diffLabel})`;
       }
 
-      // History (last 60 days)
       const history = [];
       const startIdx = Math.max(0, ts.length - 60);
       for (let i = startIdx; i < ts.length; i++) {
@@ -288,27 +307,29 @@ async function fetchFromYahooWithSuffixFallback(rawCode: string) {
   throw lastError || new Error(`No data found for ${rawCode}`);
 }
 
-export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const symbol = searchParams.get('symbol') || searchParams.get('code');
+module.exports = async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+
+  const symbol = req.query.symbol || req.query.code;
   if (!symbol) {
-    return NextResponse.json({ error: 'Missing symbol query parameter' }, { status: 400 });
+    res.status(400).json({ error: 'Missing symbol query parameter' });
+    return;
   }
 
   try {
     const data = await fetchFromYahooWithSuffixFallback(symbol);
-    return NextResponse.json(data, {
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, OPTIONS',
-        'Cache-Control': 's-maxage=60, stale-while-revalidate=120'
-      }
+    res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=120');
+    res.status(200).json(data);
+  } catch (err) {
+    res.status(404).json({
+      error: `無法取得 ${symbol} 之技術端點資料: ${err.message}`
     });
-  } catch (err: any) {
-    return NextResponse.json(
-      { error: `無法取得 ${symbol} 之技術端點資料: ${err.message}` },
-      { status: 404 }
-    );
   }
-}
+};
