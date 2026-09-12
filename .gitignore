@@ -3,3 +3,10 @@ __pycache__/
 .env
 scratch/
 requirements.txt
+app.py
+build_html.py
+test_kd_verify.py
+src/
+*.ps1
+*.vbs
+*.bat
