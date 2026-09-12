@@ -1,0 +1,9 @@
+﻿requirements.txt
+app.py
+src/
+scratch/
+test_kd_verify.py
+build_html.py
+*.ps1
+*.vbs
+*.bat
