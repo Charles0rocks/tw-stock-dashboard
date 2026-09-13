@@ -12,8 +12,6 @@ const nextConfig = {
   async rewrites() {
     return [
       { source: '/', destination: '/index.html' },
-      { source: '/stock-review', destination: '/stock-review.html' },
-      { source: '/stock', destination: '/stock-review.html' },
       { source: '/schedule', destination: '/teacher/schedule' },
       { source: '/lesson-record', destination: '/teacher/recorder' },
       { source: '/demos', destination: '/teacher/demos' },

@@ -4,11 +4,7 @@ __pycache__/
 *.pyc
 .env
 scratch/
-requirements.txt
-app.py
-build_html.py
 test_kd_verify.py
-src/*.py
 *.ps1
 *.vbs
 *.bat

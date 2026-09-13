@@ -8063,5 +8063,121 @@
         }
       ]
     }
-  ]
+  ],
+  "market_index": {
+    "symbol": "^TWII",
+    "name": "加權指數",
+    "latest": {
+      "date": "2026-09-11",
+      "close": 46184.85,
+      "change": -755.64,
+      "change_pct": -1.61,
+      "k": 58.4,
+      "d": 72.1,
+      "turnover_yi": 3896.0,
+      "streak": "連跌 2 天"
+    },
+    "records": [
+      {
+        "date": "2026-08-31",
+        "close": 46128.47,
+        "change": -202.98,
+        "change_pct": -0.44,
+        "k": 74.3,
+        "d": 63.4,
+        "turnover_yi": 7217.6,
+        "streak": "連跌 1 天"
+      },
+      {
+        "date": "2026-09-01",
+        "close": 46948.72,
+        "change": 820.25,
+        "change_pct": 1.78,
+        "k": 82.8,
+        "d": 69.9,
+        "turnover_yi": 5018.3,
+        "streak": "連漲 1 天"
+      },
+      {
+        "date": "2026-09-02",
+        "close": 46164.72,
+        "change": -784.0,
+        "change_pct": -1.67,
+        "k": 79.0,
+        "d": 72.9,
+        "turnover_yi": 4100.6,
+        "streak": "連跌 1 天"
+      },
+      {
+        "date": "2026-09-03",
+        "close": 45857.66,
+        "change": -307.06,
+        "change_pct": -0.67,
+        "k": 72.7,
+        "d": 72.9,
+        "turnover_yi": 5351.0,
+        "streak": "連跌 2 天"
+      },
+      {
+        "date": "2026-09-04",
+        "close": 46551.13,
+        "change": 693.47,
+        "change_pct": 1.51,
+        "k": 77.0,
+        "d": 74.2,
+        "turnover_yi": 3967.2,
+        "streak": "連漲 1 天"
+      },
+      {
+        "date": "2026-09-07",
+        "close": 47326.27,
+        "change": 775.14,
+        "change_pct": 1.67,
+        "k": 83.3,
+        "d": 77.3,
+        "turnover_yi": 4656.5,
+        "streak": "連漲 2 天"
+      },
+      {
+        "date": "2026-09-08",
+        "close": 47105.78,
+        "change": -220.49,
+        "change_pct": -0.47,
+        "k": 81.5,
+        "d": 78.7,
+        "turnover_yi": 4458.9,
+        "streak": "連跌 1 天"
+      },
+      {
+        "date": "2026-09-09",
+        "close": 47183.36,
+        "change": 77.58,
+        "change_pct": 0.16,
+        "k": 81.4,
+        "d": 79.6,
+        "turnover_yi": 4443.1,
+        "streak": "連漲 1 天"
+      },
+      {
+        "date": "2026-09-10",
+        "close": 46940.49,
+        "change": -242.87,
+        "change_pct": -0.51,
+        "k": 77.6,
+        "d": 78.9,
+        "turnover_yi": 3857.9,
+        "streak": "連跌 1 天"
+      },
+      {
+        "date": "2026-09-11",
+        "close": 46184.85,
+        "change": -755.64,
+        "change_pct": -1.61,
+        "k": 58.4,
+        "d": 72.1,
+        "turnover_yi": 3896.0,
+        "streak": "連跌 2 天"
+      }
+    ]
+  }
 }
