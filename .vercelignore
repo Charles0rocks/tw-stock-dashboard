@@ -1,6 +1,7 @@
 requirements.txt
 app.py
-src/
+src/*.py
+src/__pycache__/
 scratch/
 test_kd_verify.py
 build_html.py
