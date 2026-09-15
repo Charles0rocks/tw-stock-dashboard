@@ -267,6 +267,9 @@ def load_market_data():
     return fetch_market_index_data("^TWII")
 
 
+# Market Index (^TWII) 10-Day Technical & Capital Overview
+market_data = load_market_data()
+
 with st.spinner("正在抓取最新價量數據、KD 指標與財經新聞..."):
     stock_dataset = load_all_stock_data(raw_symbols)
 
@@ -296,7 +299,8 @@ for data in stock_dataset:
         valuation_info=data["valuation_info"],
         news_items=data["news"],
         attachment_text=attachment_text,
-        api_key=api_key
+        api_key=api_key,
+        market_data=market_data
     )
     
     rating = ai_res.get("rating", "中立")
@@ -325,8 +329,7 @@ with m_col4:
 
 st.divider()
 
-# Market Index (^TWII) 10-Day Technical & Capital Overview
-market_data = load_market_data()
+# Market Index Display
 if market_data.get("success"):
     with st.expander("📊 台股加權指數 (^TWII) 近 10 日技術與資金面一覽", expanded=True):
         m_tab_col, m_chart_col = st.columns([0.55, 0.45])
@@ -345,7 +348,7 @@ if market_data.get("success"):
 
 
 # Section 1: Overview Table
-st.subheader("📋 股票評估一覽表 (整合 KD 策略規則矩陣)")
+st.subheader("📋 股票評估一覽表 (雙軌決策系統：KD 常規矩陣 + 連跌風控)")
 
 table_rows = []
 for item in analyzed_data:
@@ -363,7 +366,7 @@ for item in analyzed_data:
             "9D": "N/A",
             "數據校驗": "❌ 數據異常",
             "KD策略建議狀態": "資料異常",
-            "風控提示": "N/A",
+            "風控與連跌策略": "N/A",
             "折溢價比/估值": "N/A",
             "成交量 (張)": "0 張",
             "AI評級": "未知",
@@ -401,7 +404,7 @@ for item in analyzed_data:
         "9D": d_str,
         "數據校驗": validation_badge,
         "KD策略建議狀態": ai.get("strategy_state", "【觀望】"),
-        "風控提示": ai.get("risk_control", "觀望為主"),
+        "風控與連跌策略": ai.get("risk_control", "設移動停利"),
         "折溢價比/估值": sd["valuation_info"]["display_text"],
         "成交量 (張)": sd.get("volume_display", "0 張"),
         "AI評級": rating_badge,
@@ -423,8 +426,8 @@ st.dataframe(
         "9K": st.column_config.TextColumn("9K", width="small"),
         "9D": st.column_config.TextColumn("9D", width="small"),
         "數據校驗": st.column_config.TextColumn("數據校驗", width="medium"),
-        "KD策略建議狀態": st.column_config.TextColumn("KD策略建議狀態", width="medium"),
-        "風控提示": st.column_config.TextColumn("風控提示", width="large"),
+        "KD策略建議狀態": st.column_config.TextColumn("KD策略建議狀態 (軌道一)", width="medium"),
+        "風控與連跌策略": st.column_config.TextColumn("風控與連跌策略 (軌道二)", width="large"),
         "折溢價比/估值": st.column_config.TextColumn("折溢價比/估值", width="medium"),
         "成交量 (張)": st.column_config.TextColumn("成交量 (張)", width="medium"),
         "AI評級": st.column_config.TextColumn("AI評級", width="small"),
@@ -450,8 +453,9 @@ for item in analyzed_data:
     rating = ai.get("rating", "中立")
     rating_icon = "🟢" if rating == "買進" else ("🔴" if rating == "賣出" else "🟡")
     strategy_state = ai.get("strategy_state", "【觀望】")
+    risk_text = ai.get("risk_control", "設移動停利")
     
-    expander_title = f"{rating_icon} 【{sd['symbol']}】{sd['name']} | 現價: ${sd['latest_close']:.2f} ({sd['change_pct']:+.2f}%) | 成交量: {sd.get('volume_display', '')} | KD策略: {strategy_state} | AI評級: {rating}"
+    expander_title = f"{rating_icon} 【{sd['symbol']}】{sd['name']} | 現價: ${sd['latest_close']:.2f} ({sd['change_pct']:+.2f}%) | KD: {strategy_state} | 風控: {risk_text} | AI評級: {rating}"
     
     with st.expander(expander_title, expanded=False):
         c1, c2 = st.columns([0.55, 0.45])
@@ -462,8 +466,8 @@ for item in analyzed_data:
             st.plotly_chart(fig, use_container_width=True)
             
         with c2:
-            st.markdown("##### 🤖 KD 策略矩陣與 AI 綜合研判")
-            st.warning(f"**🎯 核心 KD 策略狀態**: {strategy_state}  \n**🛡️ 風控提示 (停損/停利條款)**: {ai.get('risk_control')}")
+            st.markdown("##### 🤖 雙軌決策系統與 AI 綜合研判")
+            st.warning(f"**🎯 軌道一：KD 策略建議狀態**: {strategy_state}  \n**🛡️ 軌道二：風控與連跌策略**: {risk_text}")
             st.info(f"**🤖 AI 評估結論**: {rating} ({ai.get('confidence')}信心) | **評估引擎**: {ai.get('engine')}")
             st.write(f"**💡 綜合權衡理由**: {ai.get('reason')}")
             

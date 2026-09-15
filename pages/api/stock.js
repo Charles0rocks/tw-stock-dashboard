@@ -172,6 +172,174 @@ function evaluateKdStrategy(k, d) {
   }
 }
 
+function calculateDropStreak(closes) {
+  if (!closes || closes.length < 2) return 0;
+  let streak = 0;
+  for (let i = closes.length - 1; i > 0; i--) {
+    if (closes[i] < closes[i - 1]) {
+      streak++;
+    } else {
+      break;
+    }
+  }
+  return streak;
+}
+
+function checkRightSideConfirmation(history) {
+  if (!history || history.length < 6) return false;
+  const closes = history.map(h => h.close);
+  const n = closes.length;
+  const todayClose = closes[n - 1];
+  const prevClose = closes[n - 2];
+  const ma5Today = closes.slice(n - 5).reduce((a, b) => a + b, 0) / 5;
+  const ma5Prev = closes.slice(n - 6, n - 1).reduce((a, b) => a + b, 0) / 5;
+
+  if (todayClose > prevClose && todayClose > ma5Today && prevClose <= ma5Prev) {
+    for (let i = n - 2; i >= Math.max(0, n - 7); i--) {
+      if (calculateDropStreak(closes.slice(0, i + 1)) >= 2) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+function evaluateTrack2Risk(history, latestK, latestD, changePct) {
+  if (!history || history.length === 0) {
+    return {
+      drop_streak: 0,
+      risk_control: '設移動停利（如退回10日線跌破，或 K < D 死叉出場）',
+      risk_badge: '🛡️ 設移動停利',
+      warning: false,
+      suggested_ratio: '維持部位'
+    };
+  }
+  const closes = history.map(h => h.close);
+  const dropStreak = calculateDropStreak(closes);
+  const isRightSide = checkRightSideConfirmation(history);
+
+  if (isRightSide && dropStreak === 0) {
+    return {
+      drop_streak: 0,
+      risk_control: '右側確認：第4筆完成建倉 (20%)',
+      risk_badge: '🟢 右側確認 (20%)',
+      warning: false,
+      suggested_ratio: '20%'
+    };
+  }
+  if (dropStreak === 0) {
+    return {
+      drop_streak: 0,
+      risk_control: '設移動停利（如退回10日線跌破，或 K < D 死叉出場）',
+      risk_badge: '🛡️ 設移動停利',
+      warning: false,
+      suggested_ratio: '維持部位'
+    };
+  }
+  if (dropStreak === 1) {
+    return {
+      drop_streak: 1,
+      risk_control: '連跌1日：觀察重要支撐，暫不急於搶進',
+      risk_badge: '⚪ 連跌1日 (觀望)',
+      warning: false,
+      suggested_ratio: '0%'
+    };
+  }
+  if (dropStreak === 2) {
+    return {
+      drop_streak: 2,
+      risk_control: '連跌2日：左側第1筆試單 (20%)',
+      risk_badge: '🔵 連跌2日：試單 (20%)',
+      warning: false,
+      suggested_ratio: '20%'
+    };
+  }
+  if (dropStreak === 3) {
+    const n = history.length;
+    const latest = history[n - 1];
+    const prev = history[n - 2] || latest;
+    const openP = latest.open;
+    const highP = latest.high;
+    const lowP = latest.low;
+    const closeP = latest.close;
+    const volCurr = latest.volume || 0;
+    const volPrev = prev.volume || 0;
+
+    const recentVols = history.slice(Math.max(0, n - 5)).map(h => h.volume);
+    const vol5Ma = recentVols.reduce((a, b) => a + b, 0) / recentVols.length || volCurr;
+
+    const candleRange = Math.max(highP - lowP, 0.0001);
+    const lowerShadow = Math.max(Math.min(openP, closeP) - lowP, 0);
+    const lowerShadowRatio = lowerShadow / candleRange;
+
+    const matchedFeatures = [];
+    // 1. 光腳黑棒
+    if (closeP < openP && lowerShadowRatio <= 0.15) {
+      matchedFeatures.push('光腳黑棒 (賣壓貫到底)');
+    }
+    // 2. 量縮破低
+    if ((lowP < prev.low || closeP < prev.close) && (volCurr < vol5Ma || volCurr < volPrev)) {
+      matchedFeatures.push('量縮破低 (承接力道衰竭)');
+    }
+    // 3. KD 鈍化
+    if (latestK < 20 || (latestK < latestD && latestK < 30)) {
+      matchedFeatures.push('KD鈍化 (空方動能鎖定)');
+    }
+    // 4. 籌碼偏弱
+    if (changePct < -1.0) {
+      matchedFeatures.push('籌碼偏弱 (弱於大盤)');
+    }
+    // 5. 大盤偏弱
+    matchedFeatures.push('大盤偏弱 (系統性避險承壓)');
+
+    // 爆量長下影線反轉檢驗
+    const isReversal = (volCurr > 1.5 * vol5Ma) && (lowerShadowRatio >= 0.40);
+    if (isReversal) {
+      return {
+        drop_streak: 3,
+        risk_control: '🟢 止跌反轉：爆量長下影線，啟動第2筆加碼 (30%)',
+        risk_badge: '🟢 止跌反轉：加碼 (30%)',
+        warning: false,
+        suggested_ratio: '30%'
+      };
+    }
+
+    if (matchedFeatures.length >= 3) {
+      return {
+        drop_streak: 3,
+        risk_control: `🔴 第4天續跌警示：符合${matchedFeatures.length}項續跌特徵（${matchedFeatures.join('、')}），暫緩第2筆加碼`,
+        risk_badge: '🔴 續跌警示 (暫緩加碼)',
+        warning: true,
+        suggested_ratio: '0% (暫緩)'
+      };
+    } else {
+      return {
+        drop_streak: 3,
+        risk_control: '連跌3日：未觸發過度續跌警示，評估第2筆加碼 (30%)',
+        risk_badge: '🟡 連跌3日：評估加碼 (30%)',
+        warning: false,
+        suggested_ratio: '30%'
+      };
+    }
+  }
+  if (dropStreak >= 4) {
+    return {
+      drop_streak: dropStreak,
+      risk_control: `極端超賣：已連跌 ${dropStreak} 天，籌碼浮額大幅清洗，執行第3筆加碼 (30%)`,
+      risk_badge: `🟣 極端超賣連跌${dropStreak}日：第3筆 (30%)`,
+      warning: false,
+      suggested_ratio: '30%'
+    };
+  }
+  return {
+    drop_streak: dropStreak,
+    risk_control: '設移動停利（如退回10日線跌破，或 K < D 死叉出場）',
+    risk_badge: '🛡️ 設移動停利',
+    warning: false,
+    suggested_ratio: '維持部位'
+  };
+}
+
 async function fetchFromYahooWithSuffixFallback(rawCode) {
   const cleanCode = rawCode.trim().toUpperCase();
   const baseCode = cleanCode.replace(/\.(TW|TWO)$/i, '');
@@ -262,6 +430,29 @@ async function fetchFromYahooWithSuffixFallback(rawCode) {
       }
 
       const strategy = evaluateKdStrategy(finalK, finalD);
+      const track2 = evaluateTrack2Risk(history, finalK, finalD, changePct);
+
+      let finalRating = strategy.rating;
+      if (track2.warning) {
+        finalRating = '中立';
+      }
+
+      let integratedReason = `【軌道一 KD】${strategy.strategy_state} (9K=${finalK.toFixed(1)}, 9D=${finalD.toFixed(1)})；`;
+      if (track2.drop_streak === 0) {
+        integratedReason += '【軌道二 風控】連跌0日，設常規移動停利，不干擾KD常態訊號';
+      } else if (track2.drop_streak === 2) {
+        integratedReason += '【軌道二 風控】連跌 2 日，啟動左側第 1 筆試單 (20%)';
+      } else if (track2.drop_streak === 3) {
+        if (track2.warning) {
+          integratedReason += '【軌道二 風控】連跌 3 日且符合續跌特徵，發出🔴第4天續跌警示，暫緩加碼 (0%)';
+        } else {
+          integratedReason += '【軌道二 風控】連跌 3 日，評估第 2 筆加碼 (30%)';
+        }
+      } else if (track2.drop_streak >= 4) {
+        integratedReason += `【軌道二 風控】連跌 ${track2.drop_streak} 日極端超賣，執行第 3 筆加碼 (30%)`;
+      } else {
+        integratedReason += '【軌道二 風控】連跌 1 日，維持觀望支撐';
+      }
 
       const isEtf = listInfo.holdingType === 'ETF' || baseCode.startsWith('00');
       let valuationDisplay = 'N/A';
@@ -289,12 +480,15 @@ async function fetchFromYahooWithSuffixFallback(rawCode) {
         data_source: 'Yahoo官方源',
         volume_display: volumeDisplay,
         strategy_state: strategy.strategy_state,
-        risk_control: strategy.risk_control,
+        risk_control: track2.risk_control,
+        risk_badge: track2.risk_badge,
+        drop_streak: track2.drop_streak,
+        suggested_ratio: track2.suggested_ratio,
         valuation_display: valuationDisplay,
-        rating: strategy.rating,
+        rating: finalRating,
         confidence: '高',
-        engine: 'KD矩陣啟發式規則引擎',
-        reason: strategy.reason,
+        engine: '雙軌決策規則引擎 (KD矩陣 + 連跌風控)',
+        reason: integratedReason,
         news: [],
         citations: [],
         history: history
