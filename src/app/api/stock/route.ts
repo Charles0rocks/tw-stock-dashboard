@@ -1,7 +1,11 @@
-const https = require('https');
+import { NextRequest, NextResponse } from 'next/server';
+
+// In-memory cache for Vercel Serverless Function instances (120s TTL)
+const CACHE = new Map<string, { data: any; timestamp: number }>();
+const CACHE_TTL_MS = 120 * 1000;
 
 // Official benchmark table for precision alignment
-const YAHOO_OFFICIAL_TABLE = {
+const YAHOO_OFFICIAL_TABLE: Record<string, { k: number; d: number; volume: number }> = {
   "00720B": { k: 7.9, d: 16.3, volume: 1858 },
   "00720B.TWO": { k: 7.9, d: 16.3, volume: 1858 },
   "0056": { k: 68.8, d: 79.6, volume: 11155 },
@@ -30,7 +34,7 @@ const YAHOO_OFFICIAL_TABLE = {
   "3231.TW": { k: 78.2, d: 71.4, volume: 45600 }
 };
 
-const STOCK_NAME_MAP = {
+const KNOWN_STOCK_NAMES: Record<string, string> = {
   "2330": "台積電",
   "2317": "鴻海",
   "2454": "聯發科",
@@ -52,43 +56,33 @@ const STOCK_NAME_MAP = {
   "6669": "緯穎"
 };
 
-const CACHE = new Map();
-const CACHE_TTL_MS = 120 * 1000;
+async function fetchWithTimeout(url: string, timeoutMs: number = 4500): Promise<any> {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeoutMs);
 
-function fetchJson(url, timeoutMs = 4500) {
-  return new Promise((resolve, reject) => {
-    const req = https.get(url, {
+  try {
+    const res = await fetch(url, {
+      signal: controller.signal,
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Referer': 'https://tw.stock.yahoo.com/'
-      },
-      timeout: timeoutMs
-    }, (res) => {
-      if (res.statusCode < 200 || res.statusCode >= 300) {
-        return reject(new Error(`HTTP ${res.statusCode}`));
       }
-      let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => {
-        try {
-          resolve(JSON.parse(data));
-        } catch (err) {
-          reject(err);
-        }
-      });
     });
-    req.on('error', reject);
-    req.on('timeout', () => {
-      req.destroy();
-      reject(new Error('Request timeout'));
-    });
-  });
+    clearTimeout(id);
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}`);
+    }
+    return await res.json();
+  } catch (err: any) {
+    clearTimeout(id);
+    throw err;
+  }
 }
 
-function calculateTaiwanKD(highs, lows, closes, period = 9) {
+function calculateTaiwanKD(highs: number[], lows: number[], closes: number[], period: number = 9) {
   const len = closes.length;
-  const kArr = [];
-  const dArr = [];
+  const kArr: number[] = [];
+  const dArr: number[] = [];
   let k = 50.0;
   let d = 50.0;
 
@@ -115,203 +109,119 @@ function calculateTaiwanKD(highs, lows, closes, period = 9) {
     kArr.push(Number(k.toFixed(1)));
     dArr.push(Number(d.toFixed(1)));
   }
-  return { k: kArr[kArr.length - 1], d: dArr[dArr.length - 1], kArr, dArr };
+  return { k: kArr[kArr.length - 1] ?? 50.0, d: dArr[dArr.length - 1] ?? 50.0, kArr, dArr };
 }
 
-function evaluateKdStrategy(k, d) {
+function evaluateKdStrategy(k: number, d: number) {
   if (k >= 40.0 && k <= 60.0 && Math.abs(k - d) <= 5.0) {
     return {
       strategy_state: '【中性盤整 / 觀望】',
-      risk_control: '建議中性觀望多看少做，靜待帶量突破或走出清晰發散方向',
       rating: '中立',
-      reason: '核心KD矩陣：符合 KD 50 軸附近橫盤黏合 -> 【中性盤整 / 觀望】'
+      badge: '⚪ 中性盤整/觀望',
+      rule: 'KD 50 軸附近橫盤黏合'
     };
   }
   if (k > d) {
     if (k < 20) {
-      return {
-        strategy_state: '【買進】分批建倉',
-        risk_control: '設近9日低點為停損點，防無底跌勢續摔',
-        rating: '買進',
-        reason: '核心KD矩陣：符合 K > D 且 K < 20 -> 【買進】分批建倉'
-      };
+      return { strategy_state: '【買進】分批建倉', rating: '買進', badge: '🟢 買進 (分批建倉)', rule: 'K > D 且 K < 20' };
     } else if (k <= 80) {
-      return {
-        strategy_state: '【續抱 / 加碼買進】',
-        risk_control: '設移動停利（如退回10日線跌破，或 K < D 死叉出場）',
-        rating: '買進',
-        reason: '核心KD矩陣：符合 K > D 且 20 ≤ K ≤ 80 -> 【續抱 / 加碼買進】'
-      };
+      return { strategy_state: '【續抱 / 加碼買進】', rating: '買進', badge: '🟢 續抱/加碼買進', rule: 'K > D 且 20 <= K <= 80' };
     } else {
-      return {
-        strategy_state: '【續抱不追高】',
-        risk_control: '設高檔移動停利，K < D 死叉即刻部分獲利了結',
-        rating: '中立',
-        reason: '核心KD矩陣：符合 K > D 且 K > 80 -> 【續抱不追高】'
-      };
+      return { strategy_state: '【續抱不追高】', rating: '中立', badge: '🟡 續抱不追高', rule: 'K > D 且 K > 80' };
     }
   } else {
     if (k > 80) {
-      return {
-        strategy_state: '【賣出】獲利了結',
-        risk_control: '即刻分批停利獲利了結，防大幅修正',
-        rating: '賣出',
-        reason: '核心KD矩陣：符合 K < D 且 K > 80 -> 【賣出】獲利了結'
-      };
+      return { strategy_state: '【賣出】獲利了結', rating: '賣出', badge: '🔴 賣出 (獲利了結)', rule: 'K < D 且 K > 80' };
     } else if (k >= 20) {
-      return {
-        strategy_state: '【觀望 / 減碼賣出】',
-        risk_control: '跌破重要均線/支撐線即刻停損，觀望為主',
-        rating: '中立',
-        reason: '核心KD矩陣：符合 K < D 且 20 ≤ K ≤ 80 -> 【觀望 / 減碼賣出】'
-      };
+      return { strategy_state: '【觀望 / 減碼賣出】', rating: '賣出', badge: '🔴 觀望/減碼賣出', rule: 'K < D 且 20 <= K <= 80' };
     } else {
-      return {
-        strategy_state: '【超賣區 / 尋求築底】',
-        risk_control: '超賣區觀察築底，靜待 K > D 黃金交叉出現轉折訊號',
-        rating: '中立',
-        reason: '核心KD矩陣：符合 K < D 且 K < 20 -> 【超賣區 / 尋求築底】'
-      };
+      return { strategy_state: '【超賣區 / 尋求築底】', rating: '中立', badge: '🟡 超賣區/尋求築底', rule: 'K < D 且 K < 20' };
     }
   }
 }
 
-function calculateDropStreak(closes) {
-  if (!closes || closes.length < 2) return 0;
-  let streak = 0;
-  for (let i = closes.length - 1; i > 0; i--) {
+function evaluateTrack2Risk(history: any[], finalK: number, finalD: number, latestChangePct: number) {
+  if (!history || history.length < 5) {
+    return {
+      drop_streak: 0,
+      risk_control: '設常規移動停利，不干擾KD常態訊號',
+      risk_badge: '🛡️ 設移動停利',
+      warning: false,
+      suggested_ratio: '維持部位'
+    };
+  }
+
+  const closes = history.map(h => h.close);
+  let dropStreak = 0;
+  for (let i = closes.length - 1; i >= 1; i--) {
     if (closes[i] < closes[i - 1]) {
-      streak++;
+      dropStreak++;
     } else {
       break;
     }
   }
-  return streak;
-}
 
-function checkRightSideConfirmation(history) {
-  if (!history || history.length < 6) return false;
-  const closes = history.map(h => h.close);
-  const n = closes.length;
-  const todayClose = closes[n - 1];
-  const prevClose = closes[n - 2];
-  const ma5Today = closes.slice(n - 5).reduce((a, b) => a + b, 0) / 5;
-  const ma5Prev = closes.slice(n - 6, n - 1).reduce((a, b) => a + b, 0) / 5;
+  const latestH = history[history.length - 1];
+  const prevH = history[history.length - 2];
 
-  if (todayClose > prevClose && todayClose > ma5Today && prevClose <= ma5Prev) {
-    for (let i = n - 2; i >= Math.max(0, n - 7); i--) {
-      if (calculateDropStreak(closes.slice(0, i + 1)) >= 2) {
-        return true;
-      }
+  const features: string[] = [];
+
+  // Feature 1: Barefoot black k-line
+  const isBlackK = latestH.close < latestH.open;
+  const candleRange = latestH.high - latestH.low;
+  const lowerShadow = latestH.close - latestH.low;
+  const isBarefoot = isBlackK && (candleRange === 0 || (lowerShadow / candleRange) <= 0.08);
+  if (isBarefoot) {
+    features.push('光腳黑K (收盤逼近最低，無下影線支撐)');
+  }
+
+  // Feature 2: High single-day drop >= 2.5%
+  if (latestChangePct <= -2.5) {
+    features.push(`單日跌幅擴大 (${latestChangePct.toFixed(1)}% >= 2.5%)`);
+  }
+
+  // Feature 3: Volume shrinkage >= 15% breaking low
+  if (latestH.volume && prevH.volume && prevH.volume > 0) {
+    const volChange = (latestH.volume - prevH.volume) / prevH.volume;
+    if (volChange <= -0.15 && latestH.close < prevH.close) {
+      features.push('量縮破低 (承接力道衰竭)');
     }
   }
-  return false;
-}
 
-function evaluateTrack2Risk(history, latestK, latestD, changePct) {
-  if (!history || history.length === 0) {
-    return {
-      drop_streak: 0,
-      risk_control: '設移動停利（如退回10日線跌破，或 K < D 死叉出場）',
-      risk_badge: '🛡️ 設移動停利',
-      warning: false,
-      suggested_ratio: '維持部位'
-    };
+  // Feature 4: KD oversold death cross
+  const isDeathCross = finalK < finalD;
+  const prevK = prevH.k ?? 50;
+  const prevD = prevH.d ?? 50;
+  const justCrossed = prevK >= prevD && isDeathCross;
+  if (isDeathCross && finalK < 35 && (justCrossed || finalK < 25)) {
+    features.push('KD 低檔死叉向下發散');
   }
-  const closes = history.map(h => h.close);
-  const dropStreak = calculateDropStreak(closes);
-  const isRightSide = checkRightSideConfirmation(history);
 
-  if (isRightSide && dropStreak === 0) {
-    return {
-      drop_streak: 0,
-      risk_control: '右側確認：第4筆完成建倉 (20%)',
-      risk_badge: '🟢 右側確認 (20%)',
-      warning: false,
-      suggested_ratio: '20%'
-    };
+  // Feature 5: High volatility widening
+  if (candleRange > 0 && prevH.high && prevH.low) {
+    const prevRange = prevH.high - prevH.low;
+    if (prevRange > 0 && (candleRange / prevRange) >= 1.5 && latestH.close < latestH.open) {
+      features.push('振幅劇烈擴大且長黑收低');
+    }
   }
-  if (dropStreak === 0) {
-    return {
-      drop_streak: 0,
-      risk_control: '設移動停利（如退回10日線跌破，或 K < D 死叉出場）',
-      risk_badge: '🛡️ 設移動停利',
-      warning: false,
-      suggested_ratio: '維持部位'
-    };
-  }
-  if (dropStreak === 1) {
-    return {
-      drop_streak: 1,
-      risk_control: '連跌1日：觀察重要支撐，暫不急於搶進',
-      risk_badge: '⚪ 連跌1日 (觀望)',
-      warning: false,
-      suggested_ratio: '0%'
-    };
-  }
+
   if (dropStreak === 2) {
     return {
       drop_streak: 2,
-      risk_control: '連跌2日：左側第1筆試單 (20%)',
-      risk_badge: '🔵 連跌2日：試單 (20%)',
+      risk_control: '連跌2日：左側第1筆試單 (20%)，分批切入佈局',
+      risk_badge: '🟢 第1筆試單 (20%)',
       warning: false,
       suggested_ratio: '20%'
     };
   }
+
   if (dropStreak === 3) {
-    const n = history.length;
-    const latest = history[n - 1];
-    const prev = history[n - 2] || latest;
-    const openP = latest.open;
-    const highP = latest.high;
-    const lowP = latest.low;
-    const closeP = latest.close;
-    const volCurr = latest.volume || 0;
-    const volPrev = prev.volume || 0;
-
-    const recentVols = history.slice(Math.max(0, n - 5)).map(h => h.volume);
-    const vol5Ma = recentVols.reduce((a, b) => a + b, 0) / recentVols.length || volCurr;
-
-    const candleRange = Math.max(highP - lowP, 0.0001);
-    const lowerShadow = Math.max(Math.min(openP, closeP) - lowP, 0);
-    const lowerShadowRatio = lowerShadow / candleRange;
-
-    const matchedFeatures = [];
-    // 1. 光腳黑棒
-    if (closeP < openP && lowerShadowRatio <= 0.15) {
-      matchedFeatures.push('光腳黑棒 (賣壓貫到底)');
-    }
-    // 2. 量縮破低
-    if ((lowP < prev.low || closeP < prev.close) && (volCurr < vol5Ma || volCurr < volPrev)) {
-      matchedFeatures.push('量縮破低 (承接力道衰竭)');
-    }
-    // 3. KD 鈍化
-    if (latestK < 20 || (latestK < latestD && latestK < 30)) {
-      matchedFeatures.push('KD鈍化 (空方動能鎖定)');
-    }
-    // 4. 籌碼偏弱
-    if (changePct < -1.0) {
-      matchedFeatures.push('籌碼偏弱 (弱於大盤)');
-    }
-    // 5. 大盤偏弱
-    matchedFeatures.push('大盤偏弱 (系統性避險承壓)');
-
-    // 爆量長下影線反轉檢驗
-    const isReversal = (volCurr > 1.5 * vol5Ma) && (lowerShadowRatio >= 0.40);
-    if (isReversal) {
+    const hasWarning = features.length >= 2 || isBarefoot || latestChangePct <= -3.0;
+    if (hasWarning) {
+      const featsText = features.length > 0 ? features.join('、') : '光腳黑K收最低';
       return {
         drop_streak: 3,
-        risk_control: '🟢 止跌反轉：爆量長下影線，啟動第2筆加碼 (30%)',
-        risk_badge: '🟢 止跌反轉：加碼 (30%)',
-        warning: false,
-        suggested_ratio: '30%'
-      };
-    }
-
-    if (matchedFeatures.length >= 3) {
-      return {
-        drop_streak: 3,
-        risk_control: `🔴 第4天續跌警示：符合${matchedFeatures.length}項續跌特徵（${matchedFeatures.join('、')}），暫緩第2筆加碼`,
+        risk_control: `🔴 第4天續跌警示：符合續跌特徵（${featsText}），暫緩第2筆加碼`,
         risk_badge: '🔴 續跌警示 (暫緩加碼)',
         warning: true,
         suggested_ratio: '0% (暫緩)'
@@ -319,41 +229,54 @@ function evaluateTrack2Risk(history, latestK, latestD, changePct) {
     } else {
       return {
         drop_streak: 3,
-        risk_control: '連跌3日：未觸發過度續跌警示，評估第2筆加碼 (30%)',
-        risk_badge: '🟡 連跌3日：評估加碼 (30%)',
+        risk_control: '連跌3日：無顯著續跌特徵，依紀律評估左側第2筆加碼 (30%)',
+        risk_badge: '🟢 第2筆加碼 (30%)',
         warning: false,
         suggested_ratio: '30%'
       };
     }
   }
+
   if (dropStreak >= 4) {
     return {
       drop_streak: dropStreak,
-      risk_control: `極端超賣：已連跌 ${dropStreak} 天，籌碼浮額大幅清洗，執行第3筆加碼 (30%)`,
-      risk_badge: `🟣 極端超賣連跌${dropStreak}日：第3筆 (30%)`,
+      risk_control: `連跌${dropStreak}日極端超賣：左側第3筆加碼 (30%)，防禦型停損設前低`,
+      risk_badge: `🟡 極端超賣加碼 (${dropStreak}日)`,
       warning: false,
       suggested_ratio: '30%'
     };
   }
+
+  if (dropStreak === 1) {
+    return {
+      drop_streak: 1,
+      risk_control: '連跌 1 日，維持觀望支撐',
+      risk_badge: '⚪ 觀望支撐',
+      warning: false,
+      suggested_ratio: '維持部位'
+    };
+  }
+
   return {
     drop_streak: dropStreak,
-    risk_control: '設移動停利（如退回10日線跌破，或 K < D 死叉出場）',
+    risk_control: '設常規移動停利，不干擾KD常態訊號',
     risk_badge: '🛡️ 設移動停利',
     warning: false,
     suggested_ratio: '維持部位'
   };
 }
 
-async function fetchFromYahooWithSuffixFallback(rawCode) {
+async function fetchFromYahoo(rawCode: string) {
   const cleanCode = rawCode.trim().toUpperCase();
   const baseCode = cleanCode.replace(/\.(TW|TWO)$/i, '');
 
-  let candidates = [];
+  let candidates: string[] = [];
   if (cleanCode.endsWith('.TW')) {
     candidates = [cleanCode, `${baseCode}.TWO`];
   } else if (cleanCode.endsWith('.TWO')) {
     candidates = [cleanCode, `${baseCode}.TW`];
   } else {
+    // Default priority: .TW (listed) first, then .TWO (OTC)
     candidates = [`${baseCode}.TW`, `${baseCode}.TWO`];
   }
 
@@ -363,9 +286,10 @@ async function fetchFromYahooWithSuffixFallback(rawCode) {
       const chartUrl = `https://tw.stock.yahoo.com/_td-stock/api/resource/FinanceChartService.ApacLibraCharts;period=d;symbols=%5B%22${encodeURIComponent(sym)}%22%5D`;
       const listUrl = `https://tw.stock.yahoo.com/_td-stock/api/resource/StockServices.stockList;symbols=%5B%22${encodeURIComponent(sym)}%22%5D`;
 
+      // Parallel fetch with strict 4.5s timeout
       const [chartRes, listRes] = await Promise.all([
-        fetchJson(chartUrl),
-        fetchJson(listUrl).catch(() => null)
+        fetchWithTimeout(chartUrl, 4500),
+        fetchWithTimeout(listUrl, 4500).catch(() => null)
       ]);
 
       if (!chartRes || !chartRes[0] || !chartRes[0].chart) {
@@ -383,9 +307,10 @@ async function fetchFromYahooWithSuffixFallback(rawCode) {
 
       const listInfo = (listRes && listRes[0]) ? listRes[0] : {};
 
-      let name = STOCK_NAME_MAP[baseCode] || STOCK_NAME_MAP[sym] || meta.name || listInfo.symbolName || baseCode;
-      
-      const validCloses = quote.close.filter(c => c !== null && !isNaN(c));
+      // Dynamic name extraction: Yahoo meta name -> listInfo name -> known map -> base code
+      let name = meta.name || listInfo.symbolName || KNOWN_STOCK_NAMES[baseCode] || KNOWN_STOCK_NAMES[sym] || baseCode;
+
+      const validCloses = quote.close.filter((c: any) => c !== null && !isNaN(c));
       const latestQuoteClose = validCloses[validCloses.length - 1] || 0;
       const prevQuoteClose = validCloses[validCloses.length - 2] || latestQuoteClose;
 
@@ -396,7 +321,7 @@ async function fetchFromYahooWithSuffixFallback(rawCode) {
       const changePct = prevClose > 0 ? Number(((changeVal / prevClose) * 100).toFixed(2)) : 0;
 
       const kdCalc = calculateTaiwanKD(quote.high, quote.low, quote.close);
-      
+
       let finalK = kdCalc.k;
       let finalD = kdCalc.d;
       if (YAHOO_OFFICIAL_TABLE[baseCode]) {
@@ -417,7 +342,7 @@ async function fetchFromYahooWithSuffixFallback(rawCode) {
         volumeDisplay += ` (${diffSign}${diffPct.toFixed(1)}% ${diffLabel})`;
       }
 
-      const history = [];
+      const history: any[] = [];
       const startIdx = Math.max(0, ts.length - 60);
       for (let i = startIdx; i < ts.length; i++) {
         const dStr = new Date(ts[i] * 1000).toISOString().slice(0, 10);
@@ -497,7 +422,7 @@ async function fetchFromYahooWithSuffixFallback(rawCode) {
         citations: [],
         history: history
       };
-    } catch (err) {
+    } catch (err: any) {
       lastError = err;
     }
   }
@@ -505,44 +430,43 @@ async function fetchFromYahooWithSuffixFallback(rawCode) {
   throw lastError || new Error(`No data found for ${rawCode}`);
 }
 
-module.exports = async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const symbol = searchParams.get('symbol') || searchParams.get('code');
 
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
-  }
-
-  const symbol = req.query.symbol || req.query.code;
   if (!symbol) {
-    res.status(400).json({ error: 'Missing symbol query parameter' });
-    return;
+    return NextResponse.json({ error: 'Missing symbol query parameter' }, { status: 400 });
   }
 
   const cleanCode = symbol.trim().toUpperCase();
   const cached = CACHE.get(cleanCode);
   const now = Date.now();
   if (cached && (now - cached.timestamp) < CACHE_TTL_MS) {
-    res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=120');
-    res.setHeader('X-Cache', 'HIT');
-    res.status(200).json(cached.data);
-    return;
+    return NextResponse.json(cached.data, {
+      headers: {
+        'Cache-Control': 's-maxage=60, stale-while-revalidate=120',
+        'X-Cache': 'HIT'
+      }
+    });
   }
 
   try {
-    const data = await fetchFromYahooWithSuffixFallback(cleanCode);
+    const data = await fetchFromYahoo(cleanCode);
     CACHE.set(cleanCode, { data, timestamp: now });
     if (data.symbol) {
       CACHE.set(data.symbol, { data, timestamp: now });
     }
-    res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=120');
-    res.setHeader('X-Cache', 'MISS');
-    res.status(200).json(data);
-  } catch (err) {
-    res.status(404).json({
-      error: `無法取得 ${symbol} 之技術端點資料: ${err.message}`
+
+    return NextResponse.json(data, {
+      headers: {
+        'Cache-Control': 's-maxage=60, stale-while-revalidate=120',
+        'X-Cache': 'MISS'
+      }
     });
+  } catch (err: any) {
+    return NextResponse.json(
+      { error: `無法取得 ${symbol} 之技術端點資料: ${err.message}` },
+      { status: 404 }
+    );
   }
-};
+}

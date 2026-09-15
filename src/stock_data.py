@@ -33,6 +33,8 @@ STOCK_NAME_MAP = {
     "2002.TW": "中鋼",
     "2357.TW": "華碩",
     "2301.TW": "光寶科",
+    "2404.TW": "漢唐",
+    "2404": "漢唐",
     "00720B.TWO": "元大投資級公司債",
     "00720B.TW": "元大投資級公司債",
     "00940.TW": "元大台灣價值高息",
@@ -99,13 +101,29 @@ def format_symbol(symbol: str) -> str:
     return symbol
 
 def get_stock_name(symbol: str, default_info_name: str = "") -> str:
-    """Get stock traditional Chinese name or short name"""
+    """Get stock traditional Chinese name or short name dynamically from Yahoo endpoints or local cache"""
     formatted = format_symbol(symbol)
     if formatted in STOCK_NAME_MAP:
         return STOCK_NAME_MAP[formatted]
     base_code = formatted.split(".")[0]
     if base_code in STOCK_NAME_MAP:
         return STOCK_NAME_MAP[base_code]
+
+    # Dynamic fetch from Yahoo chart endpoint
+    try:
+        url = f"https://tw.stock.yahoo.com/_td-stock/api/resource/FinanceChartService.ApacLibraCharts;period=d;symbols=%5B%22{formatted}%22%5D"
+        r = requests.get(url, headers=HEADERS, timeout=4.0)
+        if r.status_code == 200:
+            data = r.json()
+            if data and data[0].get("chart"):
+                meta_name = data[0]["chart"].get("meta", {}).get("name")
+                if meta_name:
+                    STOCK_NAME_MAP[formatted] = meta_name
+                    STOCK_NAME_MAP[base_code] = meta_name
+                    return meta_name
+    except Exception:
+        pass
+
     return default_info_name or base_code
 
 def fetch_yahoo_official_kd(symbol: str) -> dict:
@@ -122,7 +140,43 @@ def fetch_yahoo_official_kd(symbol: str) -> dict:
     if base_code in YAHOO_OFFICIAL_TABLE:
         return YAHOO_OFFICIAL_TABLE[base_code]
 
-    # 2. 若為未收錄標的，透過 Node.js Puppeteer 實時爬取 Yahoo 技術分析頁面
+    # 2. 若為未收錄標的，直連 Yahoo 股市技術 API 即時遞迴計算 9,3,3 KD
+    try:
+        candidates = [code] if (code.endswith('.TW') or code.endswith('.TWO')) else [f"{base_code}.TW", f"{base_code}.TWO"]
+        for sym in candidates:
+            url = f"https://tw.stock.yahoo.com/_td-stock/api/resource/FinanceChartService.ApacLibraCharts;period=d;symbols=%5B%22{sym}%22%5D"
+            r = requests.get(url, headers=HEADERS, timeout=4.5)
+            if r.status_code == 200:
+                data = r.json()
+                if data and data[0].get("chart"):
+                    chart = data[0]["chart"]
+                    quote = chart.get("indicators", {}).get("quote", [{}])[0]
+                    closes = [c for c in quote.get("close", []) if c is not None]
+                    highs = [h for h in quote.get("high", []) if h is not None]
+                    lows = [l for l in quote.get("low", []) if l is not None]
+                    if len(closes) >= 9:
+                        k_val = 50.0
+                        d_val = 50.0
+                        for idx in range(8, len(closes)):
+                            sub_h = max(highs[idx-8:idx+1])
+                            sub_l = min(lows[idx-8:idx+1])
+                            c_val = closes[idx]
+                            rsv = ((c_val - sub_l) / (sub_h - sub_l) * 100.0) if sub_h != sub_l else 50.0
+                            rsv = max(0.0, min(100.0, rsv))
+                            k_val = (2.0 / 3.0) * k_val + (1.0 / 3.0) * rsv
+                            d_val = (2.0 / 3.0) * d_val + (1.0 / 3.0) * k_val
+                        vol = quote.get("volume", [])
+                        last_vol = round(vol[-1] / 1000) if vol and vol[-1] else 0
+                        return {
+                            "k": round(k_val, 1),
+                            "d": round(d_val, 1),
+                            "volume": last_vol,
+                            "source": "Yahoo 奇摩股市技術分析端點 (實時遞迴計算)"
+                        }
+    except Exception:
+        pass
+
+    # 3. 備援：若本地有 Puppeteer 腳本則嘗試提取
     try:
         import subprocess
         import json
@@ -131,7 +185,7 @@ def fetch_yahoo_official_kd(symbol: str) -> dict:
         node_env["NODE_PATH"] = r"C:\Users\Charles0\Documents\AG_MS\node_modules"
         script_path = os.path.join(os.path.dirname(__file__), "..", "scratch", "extract_one_yahoo.js")
         if os.path.exists(script_path):
-            p = subprocess.run(["node", script_path, base_code], capture_output=True, text=True, timeout=15, env=node_env)
+            p = subprocess.run(["node", script_path, base_code], capture_output=True, text=True, timeout=10, env=node_env)
             if p.returncode == 0 and p.stdout.strip():
                 data = json.loads(p.stdout.strip())
                 if data.get("success") and data.get("k") is not None and data.get("d") is not None:
