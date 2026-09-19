@@ -1,9 +1,9 @@
 {
   "summary": {
-    "total_count": 14,
+    "total_count": 15,
     "buy_count": 9,
     "hold_count": 4,
-    "sell_count": 1
+    "sell_count": 2
   },
   "stocks": [
     {
@@ -9459,6 +9459,684 @@
           "volume": 3077881,
           "k": 59.0,
           "d": 46.0
+        }
+      ]
+    },
+    {
+      "symbol": "2002.TW",
+      "name": "中鋼",
+      "latest_date": "2026-09-18",
+      "latest_close": 18.75,
+      "prev_close": 18.700000762939453,
+      "change_val": 0.05,
+      "change_pct": 0.27,
+      "k": 23.5,
+      "d": 34.2,
+      "is_verified": true,
+      "data_source": "Yahoo官方源",
+      "volume_display": "15,400 張 (-8.3% 縮量)",
+      "strategy_state": "【觀望 / 減碼賣出】",
+      "risk_control": "設移動停利（如退回10日線跌破，或 K < D 死叉出場）",
+      "risk_badge": "🛡️ 設移動停利",
+      "drop_streak": 0,
+      "suggested_ratio": "維持部位",
+      "valuation_display": "N/A (PE: 52.3x, PB: 1.0x)",
+      "rating": "賣出",
+      "confidence": "中",
+      "engine": "雙軌決策規則引擎 (KD矩陣 + 連跌風控)",
+      "reason": "【軌道一 KD】【觀望 / 減碼賣出】 (9K=23.5, 9D=34.2)；【軌道二 風控】連跌0日，設常規移動停利，不干擾KD常態訊號",
+      "news": [
+        {
+          "title": "2002 中鋼- 《國際早點名》沙國取消對歐油貨全球供應再受壓等8則 - 股市爆料同學會 - CMoney",
+          "published": "Tue, 15 Sep 2026 23:53:31 GMT",
+          "link": "https://news.google.com/rss/articles/CBMiWEFVX3lxTE96UENsR3dpWnNKMnRJdjFENTFtMTFUZGNPUWhMallRX2tGeVBNV3lWWlozWGRPbmFOd3JOMlNjdWZwMEhkS1RyQTdiSjZhTTl5dnJWRjYyazM?oc=5",
+          "source": "CMoney"
+        },
+        {
+          "title": "狂撒178.8億推動智動化轉型！「中鋼旗下大廠」優化智慧高爐製程 同步建置再生水廠 - FTNN 新聞",
+          "published": "Sat, 19 Sep 2026 04:45:00 GMT",
+          "link": "https://news.google.com/rss/articles/CBMiS0FVX3lxTE9hS1Q3dm1xOEtIVVBTMW1BZi1PaVFVRHlIVmNDYTJleVVOVnk4TjNwV2hySDMxYzVrc2hHYlZlaEhyRHVnbDZiWlhpSQ?oc=5",
+          "source": "FTNN 新聞"
+        },
+        {
+          "title": "中鋼（2002）春燕要來了？八大公股買超1853張 PTT看到3千萬笑了 - UDN",
+          "published": "Thu, 03 Sep 2026 07:00:00 GMT",
+          "link": "https://news.google.com/rss/articles/CBMiUkFVX3lxTFBGQXpXVWo0eUxpQUpjclJfNkljcl9tcTZfamtIdGtCTmtTRHhSYmV3T041QWRpUlQ2YUhHTjJyZGlZeVJrNjA2TE11ZnhXZkZPeUHSAVdBVV95cUxNdm8yc0RnN0o0alVtaXZ0dUM1bG9NZEN4RWZfQlcxTnFnd1Rla0FwNThEUWE0RVRYTDZZNjV3TG9IUXNTWWtFMVV3RnJsWjEwaU1sakJzQUk?oc=5",
+          "source": "UDN"
+        },
+        {
+          "title": "Factset 最新調查：中鋼(2002-TW)EPS預估上修至0.16元，預估目標價為21.75元｜新聞快訊｜豐雲學堂 - sinotrade.com.tw",
+          "published": "Thu, 27 Aug 2026 07:00:00 GMT",
+          "link": "https://news.google.com/rss/articles/CBMidkFVX3lxTFB3Z1RTeWczcGJqQ1h1V09qaUVJeFZhYlRuMVVnVlF0UVp5TlVYMWp1ejFzWW9NMkRISk0wa19nbFFYUGtRdGpVWUxYWnBHcC1ZaVhjSWprd1ZpQ2w0MUlKQko3NzVRWWVFdGxta0NvQ01zakViNFE?oc=5",
+          "source": "sinotrade.com.tw"
+        },
+        {
+          "title": "中鋼大甩虧損股價飆漲逾3% 專家看多：可分批布局 - Yahoo股市",
+          "published": "Wed, 22 Jul 2026 07:00:00 GMT",
+          "link": "https://news.google.com/rss/articles/CBMi2gJBVV95cUxNZkVneVg4OVg5cVJjNWN5WVhoN0VTSjRiRzVDUFlqR3ZNb1QwaDZtSGpGY2VMYjUyWFBJY0M4azFNRW16WDJvVnFhdlRndVNMSDQxZXhDRm01V2htWjdEelFTMTQxaExicGFoYWRLNDZaaWFpaXRQSDJQakgwYTBkNUFxbEpSc1V1SGQxSlZ2b2psWW9Ob1ZXb3BELWJSTl9LQ1FqNW1pLUNuaEJYRVc1LTRpSjNCLTViNDZBXzcybjNGbUgzcTZuRlRLUW9iem5oUm5qSEFHbzE0NTJMMUYzZ0t4Vk5Dc0Y2aF8yZ2dTMjZyWmdwSjYzR0l3aU5Cd0xYS29wTWliQ2xWeElLLXJ1aDZlMXJua1BqT191WHFzMnF5VjdSM1F5ZDhqR2tiSTdLZVNPMEROVTliZWw2NTNIa3kweGJMMGtYNDN6UUpiYlhFUWZtZDRNckhB?oc=5",
+          "source": "Yahoo股市"
+        }
+      ],
+      "citations": [
+        {
+          "title": "2002 中鋼- 《國際早點名》沙國取消對歐油貨全球供應再受壓等8則 - 股市爆料同學會 - CMoney",
+          "published": "Tue, 15 Sep 2026 23:53:31 GMT",
+          "link": "https://news.google.com/rss/articles/CBMiWEFVX3lxTE96UENsR3dpWnNKMnRJdjFENTFtMTFUZGNPUWhMallRX2tGeVBNV3lWWlozWGRPbmFOd3JOMlNjdWZwMEhkS1RyQTdiSjZhTTl5dnJWRjYyazM?oc=5",
+          "source": "CMoney"
+        },
+        {
+          "title": "狂撒178.8億推動智動化轉型！「中鋼旗下大廠」優化智慧高爐製程 同步建置再生水廠 - FTNN 新聞",
+          "published": "Sat, 19 Sep 2026 04:45:00 GMT",
+          "link": "https://news.google.com/rss/articles/CBMiS0FVX3lxTE9hS1Q3dm1xOEtIVVBTMW1BZi1PaVFVRHlIVmNDYTJleVVOVnk4TjNwV2hySDMxYzVrc2hHYlZlaEhyRHVnbDZiWlhpSQ?oc=5",
+          "source": "FTNN 新聞"
+        },
+        {
+          "title": "中鋼（2002）春燕要來了？八大公股買超1853張 PTT看到3千萬笑了 - UDN",
+          "published": "Thu, 03 Sep 2026 07:00:00 GMT",
+          "link": "https://news.google.com/rss/articles/CBMiUkFVX3lxTFBGQXpXVWo0eUxpQUpjclJfNkljcl9tcTZfamtIdGtCTmtTRHhSYmV3T041QWRpUlQ2YUhHTjJyZGlZeVJrNjA2TE11ZnhXZkZPeUHSAVdBVV95cUxNdm8yc0RnN0o0alVtaXZ0dUM1bG9NZEN4RWZfQlcxTnFnd1Rla0FwNThEUWE0RVRYTDZZNjV3TG9IUXNTWWtFMVV3RnJsWjEwaU1sakJzQUk?oc=5",
+          "source": "UDN"
+        }
+      ],
+      "history": [
+        {
+          "date": "2026-06-29",
+          "open": 19.2,
+          "high": 19.25,
+          "low": 19.0,
+          "close": 19.05,
+          "volume": 29254452,
+          "k": 39.4,
+          "d": 44.6
+        },
+        {
+          "date": "2026-06-30",
+          "open": 19.15,
+          "high": 19.15,
+          "low": 18.8,
+          "close": 18.8,
+          "volume": 72792789,
+          "k": 31.2,
+          "d": 40.1
+        },
+        {
+          "date": "2026-07-01",
+          "open": 18.9,
+          "high": 18.95,
+          "low": 18.6,
+          "close": 18.65,
+          "volume": 44244428,
+          "k": 22.0,
+          "d": 34.1
+        },
+        {
+          "date": "2026-07-02",
+          "open": 18.65,
+          "high": 18.7,
+          "low": 18.55,
+          "close": 18.6,
+          "volume": 30129103,
+          "k": 15.9,
+          "d": 28.0
+        },
+        {
+          "date": "2026-07-03",
+          "open": 18.6,
+          "high": 19.05,
+          "low": 18.55,
+          "close": 18.95,
+          "volume": 40978182,
+          "k": 20.1,
+          "d": 25.4
+        },
+        {
+          "date": "2026-07-06",
+          "open": 18.95,
+          "high": 19.1,
+          "low": 18.85,
+          "close": 19.0,
+          "volume": 26135342,
+          "k": 27.0,
+          "d": 25.9
+        },
+        {
+          "date": "2026-07-07",
+          "open": 18.95,
+          "high": 18.95,
+          "low": 18.6,
+          "close": 18.6,
+          "volume": 41967486,
+          "k": 19.5,
+          "d": 23.8
+        },
+        {
+          "date": "2026-07-08",
+          "open": 18.65,
+          "high": 18.8,
+          "low": 18.55,
+          "close": 18.7,
+          "volume": 21023057,
+          "k": 20.2,
+          "d": 22.6
+        },
+        {
+          "date": "2026-07-09",
+          "open": 18.7,
+          "high": 18.75,
+          "low": 18.55,
+          "close": 18.55,
+          "volume": 25398257,
+          "k": 13.4,
+          "d": 19.5
+        },
+        {
+          "date": "2026-07-10",
+          "open": 18.55,
+          "high": 18.55,
+          "low": 18.55,
+          "close": 18.55,
+          "volume": 0,
+          "k": 9.0,
+          "d": 16.0
+        },
+        {
+          "date": "2026-07-13",
+          "open": 18.6,
+          "high": 18.65,
+          "low": 18.4,
+          "close": 18.4,
+          "volume": 42802691,
+          "k": 6.0,
+          "d": 12.7
+        },
+        {
+          "date": "2026-07-14",
+          "open": 18.55,
+          "high": 18.55,
+          "low": 18.25,
+          "close": 18.5,
+          "volume": 42082089,
+          "k": 13.8,
+          "d": 13.0
+        },
+        {
+          "date": "2026-07-15",
+          "open": 18.5,
+          "high": 18.75,
+          "low": 18.45,
+          "close": 18.65,
+          "volume": 32595368,
+          "k": 24.9,
+          "d": 17.0
+        },
+        {
+          "date": "2026-07-16",
+          "open": 18.65,
+          "high": 18.8,
+          "low": 18.55,
+          "close": 18.8,
+          "volume": 26790267,
+          "k": 38.2,
+          "d": 24.0
+        },
+        {
+          "date": "2026-07-17",
+          "open": 18.8,
+          "high": 18.95,
+          "low": 18.6,
+          "close": 18.65,
+          "volume": 49523593,
+          "k": 44.5,
+          "d": 30.9
+        },
+        {
+          "date": "2026-07-20",
+          "open": 18.9,
+          "high": 18.95,
+          "low": 18.5,
+          "close": 18.55,
+          "volume": 40501922,
+          "k": 43.9,
+          "d": 35.2
+        },
+        {
+          "date": "2026-07-21",
+          "open": 18.6,
+          "high": 18.9,
+          "low": 18.6,
+          "close": 18.8,
+          "volume": 31282179,
+          "k": 55.5,
+          "d": 42.0
+        },
+        {
+          "date": "2026-07-22",
+          "open": 18.75,
+          "high": 19.0,
+          "low": 18.75,
+          "close": 18.85,
+          "volume": 46272273,
+          "k": 63.7,
+          "d": 49.2
+        },
+        {
+          "date": "2026-07-23",
+          "open": 19.0,
+          "high": 19.45,
+          "low": 19.0,
+          "close": 19.1,
+          "volume": 88839543,
+          "k": 66.0,
+          "d": 54.8
+        },
+        {
+          "date": "2026-07-24",
+          "open": 18.95,
+          "high": 19.35,
+          "low": 18.9,
+          "close": 19.15,
+          "volume": 59613988,
+          "k": 69.0,
+          "d": 59.6
+        },
+        {
+          "date": "2026-07-27",
+          "open": 19.25,
+          "high": 19.35,
+          "low": 19.15,
+          "close": 19.25,
+          "volume": 34107324,
+          "k": 72.7,
+          "d": 63.9
+        },
+        {
+          "date": "2026-07-28",
+          "open": 19.1,
+          "high": 19.2,
+          "low": 18.85,
+          "close": 19.0,
+          "volume": 36178852,
+          "k": 66.0,
+          "d": 64.6
+        },
+        {
+          "date": "2026-07-29",
+          "open": 19.1,
+          "high": 19.15,
+          "low": 18.65,
+          "close": 18.95,
+          "volume": 54093102,
+          "k": 59.8,
+          "d": 63.0
+        },
+        {
+          "date": "2026-07-30",
+          "open": 18.8,
+          "high": 19.15,
+          "low": 18.8,
+          "close": 18.95,
+          "volume": 38199610,
+          "k": 55.7,
+          "d": 60.6
+        },
+        {
+          "date": "2026-07-31",
+          "open": 19.1,
+          "high": 19.25,
+          "low": 18.95,
+          "close": 18.95,
+          "volume": 37569434,
+          "k": 50.8,
+          "d": 57.3
+        },
+        {
+          "date": "2026-08-03",
+          "open": 18.9,
+          "high": 19.05,
+          "low": 18.8,
+          "close": 18.85,
+          "volume": 22737256,
+          "k": 42.2,
+          "d": 52.3
+        },
+        {
+          "date": "2026-08-04",
+          "open": 18.75,
+          "high": 18.9,
+          "low": 18.65,
+          "close": 18.85,
+          "volume": 35490972,
+          "k": 36.5,
+          "d": 47.0
+        },
+        {
+          "date": "2026-08-05",
+          "open": 18.95,
+          "high": 19.0,
+          "low": 18.8,
+          "close": 18.9,
+          "volume": 17954273,
+          "k": 36.2,
+          "d": 43.4
+        },
+        {
+          "date": "2026-08-06",
+          "open": 18.75,
+          "high": 19.1,
+          "low": 18.7,
+          "close": 19.0,
+          "volume": 34918340,
+          "k": 40.8,
+          "d": 42.5
+        },
+        {
+          "date": "2026-08-07",
+          "open": 19.05,
+          "high": 19.2,
+          "low": 19.0,
+          "close": 19.05,
+          "volume": 28853922,
+          "k": 49.4,
+          "d": 44.8
+        },
+        {
+          "date": "2026-08-10",
+          "open": 19.25,
+          "high": 19.65,
+          "low": 19.15,
+          "close": 19.65,
+          "volume": 115382345,
+          "k": 66.3,
+          "d": 52.0
+        },
+        {
+          "date": "2026-08-11",
+          "open": 19.8,
+          "high": 19.9,
+          "low": 19.55,
+          "close": 19.75,
+          "volume": 82970967,
+          "k": 73.5,
+          "d": 59.2
+        },
+        {
+          "date": "2026-08-12",
+          "open": 19.85,
+          "high": 19.85,
+          "low": 19.65,
+          "close": 19.75,
+          "volume": 44366328,
+          "k": 78.4,
+          "d": 65.6
+        },
+        {
+          "date": "2026-08-13",
+          "open": 19.8,
+          "high": 19.8,
+          "low": 19.15,
+          "close": 19.2,
+          "volume": 51862488,
+          "k": 66.9,
+          "d": 66.0
+        },
+        {
+          "date": "2026-08-14",
+          "open": 19.25,
+          "high": 19.25,
+          "low": 18.95,
+          "close": 19.0,
+          "volume": 38787862,
+          "k": 53.9,
+          "d": 62.0
+        },
+        {
+          "date": "2026-08-17",
+          "open": 19.0,
+          "high": 19.05,
+          "low": 18.85,
+          "close": 18.85,
+          "volume": 25657359,
+          "k": 40.1,
+          "d": 54.7
+        },
+        {
+          "date": "2026-08-18",
+          "open": 18.85,
+          "high": 19.0,
+          "low": 18.85,
+          "close": 18.95,
+          "volume": 18048139,
+          "k": 33.7,
+          "d": 47.7
+        },
+        {
+          "date": "2026-08-19",
+          "open": 18.95,
+          "high": 19.0,
+          "low": 18.75,
+          "close": 18.95,
+          "volume": 31016698,
+          "k": 28.3,
+          "d": 41.2
+        },
+        {
+          "date": "2026-08-20",
+          "open": 19.0,
+          "high": 19.6,
+          "low": 19.0,
+          "close": 19.35,
+          "volume": 61555953,
+          "k": 36.2,
+          "d": 39.6
+        },
+        {
+          "date": "2026-08-21",
+          "open": 19.15,
+          "high": 19.5,
+          "low": 19.15,
+          "close": 19.45,
+          "volume": 31287264,
+          "k": 44.4,
+          "d": 41.2
+        },
+        {
+          "date": "2026-08-24",
+          "open": 19.5,
+          "high": 19.7,
+          "low": 19.2,
+          "close": 19.2,
+          "volume": 24010570,
+          "k": 43.3,
+          "d": 41.9
+        },
+        {
+          "date": "2026-08-25",
+          "open": 19.25,
+          "high": 19.3,
+          "low": 19.0,
+          "close": 19.05,
+          "volume": 22700772,
+          "k": 38.4,
+          "d": 40.7
+        },
+        {
+          "date": "2026-08-26",
+          "open": 19.2,
+          "high": 19.35,
+          "low": 19.05,
+          "close": 19.35,
+          "volume": 25171525,
+          "k": 46.6,
+          "d": 42.7
+        },
+        {
+          "date": "2026-08-27",
+          "open": 19.35,
+          "high": 19.35,
+          "low": 19.1,
+          "close": 19.15,
+          "volume": 16390890,
+          "k": 45.1,
+          "d": 43.5
+        },
+        {
+          "date": "2026-08-28",
+          "open": 19.15,
+          "high": 19.15,
+          "low": 19.0,
+          "close": 19.05,
+          "volume": 22393223,
+          "k": 40.6,
+          "d": 42.5
+        },
+        {
+          "date": "2026-08-31",
+          "open": 19.0,
+          "high": 19.05,
+          "low": 18.9,
+          "close": 18.95,
+          "volume": 33713880,
+          "k": 34.1,
+          "d": 39.7
+        },
+        {
+          "date": "2026-09-01",
+          "open": 18.95,
+          "high": 19.1,
+          "low": 18.9,
+          "close": 19.05,
+          "volume": 25858367,
+          "k": 29.0,
+          "d": 36.1
+        },
+        {
+          "date": "2026-09-02",
+          "open": 18.95,
+          "high": 19.05,
+          "low": 18.9,
+          "close": 19.05,
+          "volume": 23576242,
+          "k": 25.6,
+          "d": 32.6
+        },
+        {
+          "date": "2026-09-03",
+          "open": 19.0,
+          "high": 19.25,
+          "low": 19.0,
+          "close": 19.0,
+          "volume": 28412261,
+          "k": 21.2,
+          "d": 28.8
+        },
+        {
+          "date": "2026-09-04",
+          "open": 19.15,
+          "high": 19.15,
+          "low": 19.0,
+          "close": 19.1,
+          "volume": 14369197,
+          "k": 29.0,
+          "d": 28.9
+        },
+        {
+          "date": "2026-09-07",
+          "open": 19.15,
+          "high": 19.15,
+          "low": 19.0,
+          "close": 19.0,
+          "volume": 15842635,
+          "k": 26.7,
+          "d": 28.1
+        },
+        {
+          "date": "2026-09-08",
+          "open": 19.05,
+          "high": 19.15,
+          "low": 18.95,
+          "close": 19.1,
+          "volume": 20748657,
+          "k": 32.6,
+          "d": 29.6
+        },
+        {
+          "date": "2026-09-09",
+          "open": 19.0,
+          "high": 19.25,
+          "low": 18.95,
+          "close": 19.25,
+          "volume": 33331567,
+          "k": 55.1,
+          "d": 38.1
+        },
+        {
+          "date": "2026-09-10",
+          "open": 19.15,
+          "high": 19.3,
+          "low": 19.0,
+          "close": 19.1,
+          "volume": 21677679,
+          "k": 53.4,
+          "d": 43.2
+        },
+        {
+          "date": "2026-09-11",
+          "open": 19.0,
+          "high": 19.05,
+          "low": 18.9,
+          "close": 18.9,
+          "volume": 26719960,
+          "k": 35.6,
+          "d": 40.7
+        },
+        {
+          "date": "2026-09-14",
+          "open": 18.9,
+          "high": 18.95,
+          "low": 18.75,
+          "close": 18.8,
+          "volume": 24094547,
+          "k": 26.8,
+          "d": 36.0
+        },
+        {
+          "date": "2026-09-15",
+          "open": 18.8,
+          "high": 18.8,
+          "low": 18.65,
+          "close": 18.65,
+          "volume": 30366538,
+          "k": 17.8,
+          "d": 30.0
+        },
+        {
+          "date": "2026-09-16",
+          "open": 18.7,
+          "high": 18.75,
+          "low": 18.65,
+          "close": 18.65,
+          "volume": 26257798,
+          "k": 11.9,
+          "d": 23.9
+        },
+        {
+          "date": "2026-09-17",
+          "open": 18.7,
+          "high": 18.8,
+          "low": 18.65,
+          "close": 18.7,
+          "volume": 16798260,
+          "k": 10.5,
+          "d": 19.5
+        },
+        {
+          "date": "2026-09-18",
+          "open": 18.8,
+          "high": 18.85,
+          "low": 18.7,
+          "close": 18.75,
+          "volume": 25162810,
+          "k": 23.5,
+          "d": 34.2
         }
       ]
     }

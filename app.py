@@ -11,6 +11,7 @@ import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import os
+import re
 
 from src.stock_data import fetch_stock_data, format_symbol, fetch_market_index_data
 from src.etf_nav import get_valuation_or_nav
@@ -242,8 +243,8 @@ if uploaded_file is not None:
 st.title("📈 台股Dashboard")
 st.caption("即時價量數據 | 9日 KD 技術指標 | ETF 折溢價比 / 個股本益比 | 24-48H 新聞 | AI 買賣評估")
 
-# Parse Stock List
-raw_symbols = [s.strip() for s in stock_input.split(",") if s.strip()]
+# Parse Stock List with robust splitting for half/fullwidth comma and spaces
+raw_symbols = [s.strip().upper() for s in re.split(r'[,，\s]+', stock_input) if s.strip()]
 if not raw_symbols:
     st.warning("請在側邊欄輸入至少 1 支股票代號。")
     st.stop()
@@ -253,13 +254,30 @@ if not raw_symbols:
 def load_all_stock_data(symbols_list):
     results = []
     for sym in symbols_list:
-        data = fetch_stock_data(sym)
-        if data.get("success"):
-            val_info = get_valuation_or_nav(data["symbol"], data["latest_close"], data.get("info"))
-            news = fetch_stock_news(data["symbol"], data["name"])
-            data["valuation_info"] = val_info
-            data["news"] = news
-        results.append(data)
+        clean_sym = sym.strip().upper()
+        try:
+            data = fetch_stock_data(clean_sym)
+            if data.get("success"):
+                try:
+                    val_info = get_valuation_or_nav(data["symbol"], data["latest_close"], data.get("info"))
+                    data["valuation_info"] = val_info
+                except Exception:
+                    data["valuation_info"] = {"display_text": "N/A", "label": "本益比", "value": None}
+                
+                try:
+                    news = fetch_stock_news(data["symbol"], data["name"])
+                    data["news"] = news
+                except Exception:
+                    data["news"] = []
+            results.append(data)
+        except Exception as e:
+            results.append({
+                "symbol": clean_sym,
+                "raw_symbol": clean_sym,
+                "name": get_stock_name(clean_sym),
+                "success": False,
+                "error": f"抓取 {clean_sym} 發生例外: {str(e)}"
+            })
     return results
 
 @st.cache_data(ttl=60, show_spinner=False)
