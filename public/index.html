@@ -614,19 +614,22 @@
       // 2. Try our serverless API route /api/stock?symbol=...
       try {
         const ctrl = new AbortController();
-        const tId = setTimeout(() => ctrl.abort(), 6000);
+        const tId = setTimeout(() => ctrl.abort(), 8000);
         const resp = await fetch(`/api/stock?symbol=${encodeURIComponent(cleanCode)}`, { signal: ctrl.signal });
         clearTimeout(tId);
         if (resp.ok) {
-          const stock = await resp.json();
-          if (stock && stock.symbol && (stock.latest_close !== undefined || stock.k !== undefined)) {
-            const idx = ALL_STOCKS.findIndex(s => s.symbol === stock.symbol || normalizeSymbol(s.symbol) === baseCode);
-            if (idx >= 0) {
-              ALL_STOCKS[idx] = stock;
-            } else {
-              ALL_STOCKS.push(stock);
+          const contentType = resp.headers.get('content-type') || '';
+          if (contentType.includes('application/json')) {
+            const stock = await resp.json();
+            if (stock && stock.symbol && (stock.latest_close !== undefined || stock.k !== undefined)) {
+              const idx = ALL_STOCKS.findIndex(s => s.symbol === stock.symbol || normalizeSymbol(s.symbol) === baseCode);
+              if (idx >= 0) {
+                ALL_STOCKS[idx] = stock;
+              } else {
+                ALL_STOCKS.push(stock);
+              }
+              return stock;
             }
-            return stock;
           }
         }
       } catch (err) {
