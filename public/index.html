@@ -218,12 +218,12 @@
           id="refreshDataBtn"
           onclick="refreshLiveMarketAndStocks(true)" 
           class="w-full py-2 px-3 rounded-md bg-emerald-700 hover:bg-emerald-600 active:bg-emerald-800 text-xs font-bold text-white shadow transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-          title="? Yahoo ???????????????????"
+          title="從 Yahoo 股市即時獲取最新報價與指標"
         >
-          <span id="refreshBtnIcon">??</span> <span id="refreshBtnText">????????</span>
+          <span id="refreshBtnIcon">🔄</span> <span id="refreshBtnText">同步最新即時行情</span>
         </button>
         <div id="lastSyncTimeText" class="text-[10px] text-slate-400 text-center">
-          ????????2026-09-18
+          資料基準日：2026-09-18
         </div>
       </div>
     </div>
@@ -580,7 +580,7 @@
       "元大投資級公司債": "00720B.TWO"
     };
 
-    async function fetchStockDynamic(rawCode) {
+    async function fetchStockDynamic(rawCode, forceRefresh = false) {
       const rawTrim = rawCode.trim();
       let cleanCode = rawTrim.toUpperCase();
       if (NAME_TO_CODE[rawTrim]) {
@@ -588,9 +588,9 @@
       }
       const baseCode = cleanCode.replace(/\.(TW|TWO)$/i, '');
 
-      // 1. Check if already loaded in memory
+      // 1. Check if already loaded in memory (unless forceRefresh is true)
       let existing = ALL_STOCKS.find(s => normalizeSymbol(s.symbol) === baseCode || s.symbol.toUpperCase() === cleanCode || s.name === rawTrim);
-      if (existing) return existing;
+      if (existing && !forceRefresh) return existing;
 
       // 2. Try our serverless API route /api/stock?symbol=...
       try {
@@ -1061,8 +1061,8 @@
       if (topBtn) topBtn.disabled = true;
       if (icon) icon.classList.add('animate-spin');
       if (topIcon) topIcon.classList.add('animate-spin');
-      if (txt) txt.textContent = '????????...';
-      if (topTxt) topTxt.textContent = '???...';
+      if (txt) txt.textContent = '正在同步即時數據...';
+      if (topTxt) topTxt.textContent = '同步中...';
 
       try {
         // 1. Fetch live market index (^TWII)
@@ -1073,7 +1073,6 @@
             if (mData && mData.records && mData.records.length > 0) {
               DATA.market_index = mData;
               renderMarketIndex();
-      setTimeout(() => refreshLiveMarketAndStocks(false), 500);
             }
           }
         } catch (e) {
@@ -1082,7 +1081,7 @@
 
         // 2. Fetch live data for current visible stocks
         const symbolsToUpdate = currentStocks.map(s => s.symbol);
-        const updatePromises = symbolsToUpdate.map(sym => fetchStockDynamic(sym));
+        const updatePromises = symbolsToUpdate.map(sym => fetchStockDynamic(sym, true));
         await Promise.allSettled(updatePromises);
 
         // 3. Re-render table and metrics
@@ -1093,7 +1092,7 @@
 
         const latestDate = DATA.market_index?.latest?.date || new Date().toISOString().slice(0, 10);
         if (timeTxt) {
-          timeTxt.textContent = `?????????${latestDate}`;
+          timeTxt.textContent = `資料基準日：${latestDate}`;
         }
       } catch (err) {
         console.error('Refresh error:', err);
@@ -1102,8 +1101,8 @@
         if (topBtn) topBtn.disabled = false;
         if (icon) icon.classList.remove('animate-spin');
         if (topIcon) topIcon.classList.remove('animate-spin');
-        if (txt) txt.textContent = '????????';
-        if (topTxt) topTxt.textContent = '????????';
+        if (txt) txt.textContent = '同步最新即時行情';
+        if (topTxt) topTxt.textContent = '同步最新即時行情';
       }
     }
 

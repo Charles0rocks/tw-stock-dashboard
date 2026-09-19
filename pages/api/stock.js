@@ -399,12 +399,14 @@ async function fetchFromYahooWithSuffixFallback(rawCode) {
       
       let finalK = kdCalc.k;
       let finalD = kdCalc.d;
-      if (YAHOO_OFFICIAL_TABLE[baseCode]) {
-        finalK = YAHOO_OFFICIAL_TABLE[baseCode].k;
-        finalD = YAHOO_OFFICIAL_TABLE[baseCode].d;
-      } else if (YAHOO_OFFICIAL_TABLE[sym]) {
-        finalK = YAHOO_OFFICIAL_TABLE[sym].k;
-        finalD = YAHOO_OFFICIAL_TABLE[sym].d;
+      if (finalK === undefined || isNaN(finalK)) {
+        if (YAHOO_OFFICIAL_TABLE[baseCode]) {
+          finalK = YAHOO_OFFICIAL_TABLE[baseCode].k;
+          finalD = YAHOO_OFFICIAL_TABLE[baseCode].d;
+        } else if (YAHOO_OFFICIAL_TABLE[sym]) {
+          finalK = YAHOO_OFFICIAL_TABLE[sym].k;
+          finalD = YAHOO_OFFICIAL_TABLE[sym].d;
+        }
       }
 
       const volK = listInfo.volumeK || (quote.volume ? Math.round(quote.volume[quote.volume.length - 1] / 1000) : 0);

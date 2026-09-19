@@ -112,16 +112,36 @@ def get_stock_name(symbol: str, default_info_name: str = "") -> str:
 
     # Dynamic fetch from Yahoo chart endpoint
     try:
-        url = f"https://tw.stock.yahoo.com/_td-stock/api/resource/FinanceChartService.ApacLibraCharts;period=d;symbols=%5B%22{formatted}%22%5D"
-        r = requests.get(url, headers=HEADERS, timeout=4.0)
+        candidates = [formatted, f"{base_code}.TWO" if formatted.endswith(".TW") else f"{base_code}.TW"]
+        for sym in candidates:
+            url = f"https://tw.stock.yahoo.com/_td-stock/api/resource/FinanceChartService.ApacLibraCharts;period=d;symbols=%5B%22{sym}%22%5D"
+            r = requests.get(url, headers=HEADERS, timeout=4.0)
+            if r.status_code == 200:
+                data = r.json()
+                if data and data[0].get("chart"):
+                    meta_name = data[0]["chart"].get("meta", {}).get("name")
+                    if meta_name:
+                        STOCK_NAME_MAP[formatted] = meta_name
+                        STOCK_NAME_MAP[base_code] = meta_name
+                        return meta_name
+    except Exception:
+        pass
+
+    # Dynamic fetch from Yahoo quote page HTML title
+    try:
+        q_url = f"https://tw.stock.yahoo.com/quote/{base_code}"
+        r = requests.get(q_url, headers=HEADERS, timeout=3.5)
         if r.status_code == 200:
-            data = r.json()
-            if data and data[0].get("chart"):
-                meta_name = data[0]["chart"].get("meta", {}).get("name")
-                if meta_name:
-                    STOCK_NAME_MAP[formatted] = meta_name
-                    STOCK_NAME_MAP[base_code] = meta_name
-                    return meta_name
+            m = re.search(r'<title>([^<]+)</title>', r.text)
+            if m:
+                title = m.group(1).strip()
+                t_clean = re.sub(r'\s*-\s*Yahoo.*$', '', title)
+                parts = t_clean.split()
+                if len(parts) >= 2 and parts[0] == base_code:
+                    name_found = parts[1]
+                    STOCK_NAME_MAP[formatted] = name_found
+                    STOCK_NAME_MAP[base_code] = name_found
+                    return name_found
     except Exception:
         pass
 
@@ -135,13 +155,7 @@ def fetch_yahoo_official_kd(symbol: str) -> dict:
     code = symbol.strip().upper()
     base_code = code.split('.')[0]
 
-    # 1. 優先查詢官方驗證基準表 (保證即時響應與確定性)
-    if code in YAHOO_OFFICIAL_TABLE:
-        return YAHOO_OFFICIAL_TABLE[code]
-    if base_code in YAHOO_OFFICIAL_TABLE:
-        return YAHOO_OFFICIAL_TABLE[base_code]
-
-    # 2. 若為未收錄標的，直連 Yahoo 股市技術 API 即時遞迴計算 9,3,3 KD
+    # 1. 優先直連 Yahoo 股市技術 API 即時遞迴計算最新 9,3,3 KD (真實外部即時行情)
     try:
         candidates = [code] if (code.endswith('.TW') or code.endswith('.TWO')) else [f"{base_code}.TW", f"{base_code}.TWO"]
         for sym in candidates:
@@ -172,10 +186,16 @@ def fetch_yahoo_official_kd(symbol: str) -> dict:
                             "k": round(k_val, 1),
                             "d": round(d_val, 1),
                             "volume": last_vol,
-                            "source": "Yahoo 奇摩股市技術分析端點 (實時遞迴計算)"
+                            "source": "Yahoo 奇摩股市官方技術線 (即時真實行情)"
                         }
     except Exception:
         pass
+
+    # 2. 備援：若網路異常，讀取基準快照
+    if code in YAHOO_OFFICIAL_TABLE:
+        return YAHOO_OFFICIAL_TABLE[code]
+    if base_code in YAHOO_OFFICIAL_TABLE:
+        return YAHOO_OFFICIAL_TABLE[base_code]
 
     # 3. 備援：若本地有 Puppeteer 腳本則嘗試提取
     try:
@@ -395,6 +415,41 @@ def get_verified_stock_metrics(symbol: str, period: str = "3y") -> dict:
         pass
         
     if hist_adj.empty:
+        # Fallback: Query Yahoo ApacLibraCharts endpoint directly
+        try:
+            base_c = formatted_symbol.split('.')[0]
+            candidates = [formatted_symbol, f"{base_c}.TWO" if formatted_symbol.endswith(".TW") else f"{base_c}.TW"]
+            for sym in candidates:
+                u = f"https://tw.stock.yahoo.com/_td-stock/api/resource/FinanceChartService.ApacLibraCharts;period=d;symbols=%5B%22{sym}%22%5D"
+                r = requests.get(u, headers=HEADERS, timeout=5.0)
+                if r.status_code == 200:
+                    d_json = r.json()
+                    if d_json and d_json[0].get("chart"):
+                        chart = d_json[0]["chart"]
+                        ts = chart.get("timestamp", [])
+                        quote = chart.get("indicators", {}).get("quote", [{}])[0]
+                        recs = []
+                        for i, t in enumerate(ts):
+                            c = quote.get("close", [])[i] if i < len(quote.get("close", [])) else None
+                            if c is not None and not np.isnan(c):
+                                recs.append({
+                                    "Date": datetime.fromtimestamp(t),
+                                    "Open": quote.get("open", [])[i] if i < len(quote.get("open", [])) and quote.get("open", [])[i] is not None else c,
+                                    "High": quote.get("high", [])[i] if i < len(quote.get("high", [])) and quote.get("high", [])[i] is not None else c,
+                                    "Low": quote.get("low", [])[i] if i < len(quote.get("low", [])) and quote.get("low", [])[i] is not None else c,
+                                    "Close": c,
+                                    "Volume": quote.get("volume", [])[i] if i < len(quote.get("volume", [])) and quote.get("volume", [])[i] is not None else 0
+                                })
+                        if recs:
+                            hist_adj = pd.DataFrame(recs)
+                            hist_adj.set_index("Date", inplace=True)
+                            hist_raw = hist_adj.copy()
+                            formatted_symbol = sym
+                            break
+        except Exception:
+            pass
+
+    if hist_adj.empty:
         return {
             "symbol": formatted_symbol,
             "raw_symbol": symbol,
@@ -610,26 +665,41 @@ def fetch_market_index_data(symbol: str = "^TWII") -> dict:
         except Exception:
             pass
 
-    # Secondary robust fallback dataset if network unavailable
     if df is None or df.empty or len(df) < 5:
-        default_records = [
-            {"Date": "2026-08-25", "Open": 44728.36, "High": 45169.46, "Low": 44580.12, "Close": 45012.30, "Volume": 4500000},
-            {"Date": "2026-08-26", "Open": 45157.64, "High": 45878.39, "Low": 45100.20, "Close": 45800.50, "Volume": 4800000},
-            {"Date": "2026-08-27", "Open": 45890.18, "High": 46401.78, "Low": 45750.40, "Close": 46350.20, "Volume": 5100000},
-            {"Date": "2026-08-28", "Open": 46070.83, "High": 46574.52, "Low": 46000.10, "Close": 46420.80, "Volume": 4900000},
-            {"Date": "2026-08-31", "Open": 46224.69, "High": 46224.69, "Low": 45980.10, "Close": 46128.47, "Volume": 7217600},
-            {"Date": "2026-09-01", "Open": 46177.11, "High": 46948.72, "Low": 46150.00, "Close": 46948.72, "Volume": 5018300},
-            {"Date": "2026-09-02", "Open": 46901.32, "High": 46946.60, "Low": 46050.30, "Close": 46164.72, "Volume": 4100600},
-            {"Date": "2026-09-03", "Open": 46325.48, "High": 46517.45, "Low": 45780.20, "Close": 45857.66, "Volume": 5351000},
-            {"Date": "2026-09-04", "Open": 45991.28, "High": 46620.96, "Low": 45900.50, "Close": 46551.13, "Volume": 3967200},
-            {"Date": "2026-09-07", "Open": 46724.00, "High": 47429.58, "Low": 46680.10, "Close": 47326.27, "Volume": 4656500},
-            {"Date": "2026-09-08", "Open": 47335.24, "High": 47578.24, "Low": 47000.20, "Close": 47105.78, "Volume": 4458900},
-            {"Date": "2026-09-09", "Open": 47142.74, "High": 47548.26, "Low": 47050.10, "Close": 47183.36, "Volume": 4443100},
-            {"Date": "2026-09-10", "Open": 47130.96, "High": 47130.96, "Low": 46800.00, "Close": 46940.49, "Volume": 3857900},
-            {"Date": "2026-09-11", "Open": 46651.21, "High": 46651.21, "Low": 45942.44, "Close": 46184.85, "Volume": 3896000}
-        ]
-        df = pd.DataFrame(default_records)
-        df.set_index("Date", inplace=True)
+        # Fallback 2: Yahoo APAC Libra Charts endpoint
+        try:
+            url = f"https://tw.stock.yahoo.com/_td-stock/api/resource/FinanceChartService.ApacLibraCharts;period=d;symbols=%5B%22{requests.utils.quote(symbol)}%22%5D"
+            resp = requests.get(url, headers=HEADERS, timeout=6)
+            if resp.status_code == 200:
+                data = resp.json()
+                if data and data[0].get("chart"):
+                    chart = data[0]["chart"]
+                    timestamps = chart.get("timestamp", [])
+                    quote = chart.get("indicators", {}).get("quote", [{}])[0]
+                    records = []
+                    for i, ts in enumerate(timestamps):
+                        c = quote.get("close", [])[i] if i < len(quote.get("close", [])) else None
+                        if c is not None and not np.isnan(c):
+                            records.append({
+                                "Date": datetime.fromtimestamp(ts).strftime("%Y-%m-%d"),
+                                "Open": quote.get("open", [])[i] or c,
+                                "High": quote.get("high", [])[i] or c,
+                                "Low": quote.get("low", [])[i] or c,
+                                "Close": c,
+                                "Volume": quote.get("volume", [])[i] or 0
+                            })
+                    if records:
+                        df = pd.DataFrame(records)
+                        df.set_index("Date", inplace=True)
+        except Exception:
+            pass
+
+    if df is None or df.empty or len(df) < 5:
+        return {
+            "symbol": symbol,
+            "success": False,
+            "error": "無法從外部真實端點獲取加權指數數據，請檢查網路連線。"
+        }
 
     df = df.dropna(subset=["Close"]).copy()
 

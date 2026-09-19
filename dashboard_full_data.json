@@ -1,9 +1,9 @@
 {
   "summary": {
-    "total_count": 15,
-    "buy_count": 9,
-    "hold_count": 4,
-    "sell_count": 2
+    "total_count": 16,
+    "buy_count": 7,
+    "hold_count": 5,
+    "sell_count": 4
   },
   "stocks": [
     {
@@ -14,11 +14,11 @@
       "prev_close": 2425.0,
       "change_val": 35.0,
       "change_pct": 1.44,
-      "k": 74.0,
-      "d": 68.0,
+      "k": 38.2,
+      "d": 33.9,
       "is_verified": true,
       "data_source": "Yahoo官方源",
-      "volume_display": "13,232 張 (-17.3% 縮量)",
+      "volume_display": "35 張 (-99.8% 縮量)",
       "strategy_state": "【續抱 / 加碼買進】",
       "risk_control": "設移動停利（如退回10日線跌破，或 K < D 死叉出場）",
       "risk_badge": "🛡️ 設移動停利",
@@ -28,7 +28,7 @@
       "rating": "買進",
       "confidence": "高",
       "engine": "雙軌決策規則引擎 (KD矩陣 + 連跌風控)",
-      "reason": "【軌道一 KD】【續抱 / 加碼買進】 (9K=74.0, 9D=68.0)；【軌道二 風控】連跌0日，設常規移動停利，不干擾KD常態訊號；最新新聞偏多 (3則利多資訊)",
+      "reason": "【軌道一 KD】【續抱 / 加碼買進】 (9K=38.2, 9D=33.9)；【軌道二 風控】連跌0日，設常規移動停利，不干擾KD常態訊號；最新新聞偏多 (3則利多資訊)",
       "news": [
         {
           "title": "【零股排行榜】盤中零股成交量TOP 20｜0050 元大台灣50、00631L 元大台灣50正2、00919 群益台灣精選高息、2330 台積電、00878 國泰永續高股息(0911)｜豐雲學堂2026 年 09 月 - sinotrade.com.tw",
@@ -679,8 +679,8 @@
           "low": 2435.0,
           "close": 2460.0,
           "volume": 35352856,
-          "k": 74.0,
-          "d": 68.0
+          "k": 38.2,
+          "d": 33.9
         }
       ]
     },
@@ -692,21 +692,21 @@
       "prev_close": 250.5,
       "change_val": 0.0,
       "change_pct": 0.0,
-      "k": 75.2,
-      "d": 64.5,
+      "k": 42.0,
+      "d": 38.5,
       "is_verified": true,
       "data_source": "Yahoo官方源",
-      "volume_display": "25,410 張 (-1.6% 縮量)",
-      "strategy_state": "【續抱 / 加碼買進】",
+      "volume_display": "44 張 (-99.8% 縮量)",
+      "strategy_state": "【中性盤整 / 觀望】",
       "risk_control": "設移動停利（如退回10日線跌破，或 K < D 死叉出場）",
       "risk_badge": "🛡️ 設移動停利",
       "drop_streak": 0,
       "suggested_ratio": "維持部位",
       "valuation_display": "N/A (PE: 16.6x, PB: 1.8x)",
-      "rating": "買進",
+      "rating": "中立",
       "confidence": "高",
       "engine": "雙軌決策規則引擎 (KD矩陣 + 連跌風控)",
-      "reason": "【軌道一 KD】【續抱 / 加碼買進】 (9K=75.2, 9D=64.5)；【軌道二 風控】連跌0日，設常規移動停利，不干擾KD常態訊號；最新新聞偏多 (2則利多資訊)",
+      "reason": "【軌道一 KD】【中性盤整 / 觀望】 (9K=42.0, 9D=38.5)；【軌道二 風控】連跌0日，設常規移動停利，不干擾KD常態訊號；最新新聞偏多 (2則利多資訊)",
       "news": [
         {
           "title": "鴻海(2317)太委屈，股價250元可以買？選股教練親解「黃金右下角」高勝率選股術：3檔跌深好股出列 - 今周刊",
@@ -1357,8 +1357,8 @@
           "low": 249.0,
           "close": 250.5,
           "volume": 43948586,
-          "k": 75.2,
-          "d": 64.5
+          "k": 42.0,
+          "d": 38.5
         }
       ]
     },
@@ -1370,21 +1370,21 @@
       "prev_close": 4500.0,
       "change_val": 210.0,
       "change_pct": 4.67,
-      "k": 76.5,
-      "d": 67.2,
+      "k": 48.2,
+      "d": 51.3,
       "is_verified": true,
       "data_source": "Yahoo官方源",
-      "volume_display": "5,820 張 (-2.2% 縮量)",
-      "strategy_state": "【續抱 / 加碼買進】",
+      "volume_display": "9 張 (-99.8% 縮量)",
+      "strategy_state": "【中性盤整 / 觀望】",
       "risk_control": "設移動停利（如退回10日線跌破，或 K < D 死叉出場）",
       "risk_badge": "🛡️ 設移動停利",
       "drop_streak": 0,
       "suggested_ratio": "維持部位",
       "valuation_display": "N/A (PE: 77.5x, PB: 17.7x)",
-      "rating": "買進",
+      "rating": "中立",
       "confidence": "高",
       "engine": "雙軌決策規則引擎 (KD矩陣 + 連跌風控)",
-      "reason": "【軌道一 KD】【續抱 / 加碼買進】 (9K=76.5, 9D=67.2)；【軌道二 風控】連跌0日，設常規移動停利，不干擾KD常態訊號；最新新聞偏多 (5則利多資訊)",
+      "reason": "【軌道一 KD】【中性盤整 / 觀望】 (9K=48.2, 9D=51.3)；【軌道二 風控】連跌0日，設常規移動停利，不干擾KD常態訊號；最新新聞偏多 (5則利多資訊)",
       "news": [
         {
           "title": "聯發科營收報喜股價不賞臉！早盤挫逾2% 分析師示警：逃不出「如來佛手掌心」 - Yahoo股市",
@@ -2035,8 +2035,8 @@
           "low": 4545.0,
           "close": 4710.0,
           "volume": 9019674,
-          "k": 76.5,
-          "d": 67.2
+          "k": 48.2,
+          "d": 51.3
         }
       ]
     },
@@ -2048,21 +2048,21 @@
       "prev_close": 1685.0,
       "change_val": 50.0,
       "change_pct": 2.97,
-      "k": 50.2,
-      "d": 51.8,
+      "k": 43.1,
+      "d": 37.5,
       "is_verified": true,
       "data_source": "Yahoo官方源",
-      "volume_display": "8,546 張 (-15.8% 縮量)",
-      "strategy_state": "【中性盤整 / 觀望】",
+      "volume_display": "12 張 (-99.9% 縮量)",
+      "strategy_state": "【續抱 / 加碼買進】",
       "risk_control": "設移動停利（如退回10日線跌破，或 K < D 死叉出場）",
       "risk_badge": "🛡️ 設移動停利",
       "drop_streak": 0,
       "suggested_ratio": "維持部位",
       "valuation_display": "N/A (PE: 55.3x, PB: 15.3x)",
-      "rating": "中立",
+      "rating": "買進",
       "confidence": "高",
       "engine": "雙軌決策規則引擎 (KD矩陣 + 連跌風控)",
-      "reason": "【軌道一 KD】【中性盤整 / 觀望】 (9K=50.2, 9D=51.8)；【軌道二 風控】連跌0日，設常規移動停利，不干擾KD常態訊號；最新新聞偏多 (4則利多資訊)",
+      "reason": "【軌道一 KD】【續抱 / 加碼買進】 (9K=43.1, 9D=37.5)；【軌道二 風控】連跌0日，設常規移動停利，不干擾KD常態訊號；最新新聞偏多 (4則利多資訊)",
       "news": [
         {
           "title": "台達電「營收行情失靈」4天走跌15%...277位千張大戶平均身家蒸發逾5億元 - Yahoo股市",
@@ -2713,8 +2713,8 @@
           "low": 1715.0,
           "close": 1735.0,
           "volume": 12081302,
-          "k": 50.2,
-          "d": 51.8
+          "k": 43.1,
+          "d": 37.5
         }
       ]
     },
@@ -2726,21 +2726,21 @@
       "prev_close": 151.5,
       "change_val": -1.0,
       "change_pct": -0.66,
-      "k": 92.5,
-      "d": 90.1,
+      "k": 66.4,
+      "d": 67.6,
       "is_verified": true,
       "data_source": "Yahoo官方源",
-      "volume_display": "18,950 張 (+40.9% 放量)",
-      "strategy_state": "【超買鈍化 / 續抱不追高】",
+      "volume_display": "28 張 (-99.8% 縮量)",
+      "strategy_state": "【觀望 / 減碼賣出】",
       "risk_control": "連跌2日：左側第1筆試單 (20%)",
       "risk_badge": "🔵 連跌2日：試單 (20%)",
       "drop_streak": 2,
       "suggested_ratio": "20%",
       "valuation_display": "N/A (PE: 18.0x, PB: 1.7x)",
-      "rating": "中立",
+      "rating": "賣出",
       "confidence": "高",
       "engine": "雙軌決策規則引擎 (KD矩陣 + 連跌風控)",
-      "reason": "【軌道一 KD】【超買鈍化 / 續抱不追高】 (9K=92.5, 9D=90.1)；【軌道二 風控】連跌 2 日，啟動左側第 1 筆試單 (20%)；最新新聞偏多 (3則利多資訊)",
+      "reason": "【軌道一 KD】【觀望 / 減碼賣出】 (9K=66.4, 9D=67.6)；【軌道二 風控】連跌 2 日，啟動左側第 1 筆試單 (20%)；最新新聞偏多 (3則利多資訊)",
       "news": [
         {
           "title": "富邦金發債安心或鎮定？ - CMoney",
@@ -3391,8 +3391,8 @@
           "low": 148.0,
           "close": 150.5,
           "volume": 27506101,
-          "k": 92.5,
-          "d": 90.1
+          "k": 66.4,
+          "d": 67.6
         }
       ]
     },
@@ -3404,21 +3404,21 @@
       "prev_close": 112.0,
       "change_val": -1.5,
       "change_pct": -1.34,
-      "k": 86.8,
-      "d": 78.9,
+      "k": 40.6,
+      "d": 46.1,
       "is_verified": true,
       "data_source": "Yahoo官方源",
-      "volume_display": "17,238 張 (-11.5% 縮量)",
-      "strategy_state": "【超買鈍化 / 續抱不追高】",
+      "volume_display": "43 張 (-99.8% 縮量)",
+      "strategy_state": "【觀望 / 減碼賣出】",
       "risk_control": "連跌2日：左側第1筆試單 (20%)",
       "risk_badge": "🔵 連跌2日：試單 (20%)",
       "drop_streak": 2,
       "suggested_ratio": "20%",
       "valuation_display": "N/A (PE: 15.7x, PB: 1.5x)",
-      "rating": "中立",
+      "rating": "賣出",
       "confidence": "高",
       "engine": "雙軌決策規則引擎 (KD矩陣 + 連跌風控)",
-      "reason": "【軌道一 KD】【超買鈍化 / 續抱不追高】 (9K=86.8, 9D=78.9)；【軌道二 風控】連跌 2 日，啟動左側第 1 筆試單 (20%)；最新新聞偏多 (1則利多資訊)",
+      "reason": "【軌道一 KD】【觀望 / 減碼賣出】 (9K=40.6, 9D=46.1)；【軌道二 風控】連跌 2 日，啟動左側第 1 筆試單 (20%)；最新新聞偏多 (1則利多資訊)",
       "news": [
         {
           "title": "166萬人盯00878配息189億，國泰金 (2882) 13份共識藏什麼？-梁姐價值投資心法 - CMoney投資網誌",
@@ -4069,8 +4069,8 @@
           "low": 109.0,
           "close": 110.5,
           "volume": 43280347,
-          "k": 86.8,
-          "d": 78.9
+          "k": 40.6,
+          "d": 46.1
         }
       ]
     },
@@ -4082,21 +4082,21 @@
       "prev_close": 108.05000305175781,
       "change_val": 1.8,
       "change_pct": 1.67,
-      "k": 71.3,
-      "d": 71.1,
+      "k": 51.0,
+      "d": 46.1,
       "is_verified": true,
       "data_source": "Yahoo官方源",
-      "volume_display": "12,450 張 (-73.7% 縮量)",
-      "strategy_state": "【續抱 / 加碼買進】",
+      "volume_display": "80 張 (-99.8% 縮量)",
+      "strategy_state": "【中性盤整 / 觀望】",
       "risk_control": "設移動停利（如退回10日線跌破，或 K < D 死叉出場）",
       "risk_badge": "🛡️ 設移動停利",
       "drop_streak": 0,
       "suggested_ratio": "維持部位",
       "valuation_display": "溢價 +1.79% (淨值:107.92)",
-      "rating": "買進",
+      "rating": "中立",
       "confidence": "中",
       "engine": "雙軌決策規則引擎 (KD矩陣 + 連跌風控)",
-      "reason": "【軌道一 KD】【續抱 / 加碼買進】 (9K=71.3, 9D=71.1)；【軌道二 風控】連跌0日，設常規移動停利，不干擾KD常態訊號；⚠️ ETF 顯著溢價 (+1.79%)，警示追高風險",
+      "reason": "【軌道一 KD】【中性盤整 / 觀望】 (9K=51.0, 9D=46.1)；【軌道二 風控】連跌0日，設常規移動停利，不干擾KD常態訊號；⚠️ ETF 顯著溢價 (+1.79%)，警示追高風險",
       "news": [
         {
           "title": "【零股排行榜】盤中零股成交量TOP 20｜0050 元大台灣50、00631L 元大台灣50正2、00919 群益台灣精選高息、2330 台積電、00878 國泰永續高股息(0911)｜豐雲學堂2026 年 09 月 - sinotrade.com.tw",
@@ -4747,8 +4747,8 @@
           "low": 108.85,
           "close": 109.85,
           "volume": 86346476,
-          "k": 71.3,
-          "d": 71.1
+          "k": 51.0,
+          "d": 46.1
         }
       ]
     },
@@ -4760,21 +4760,21 @@
       "prev_close": 56.29999923706055,
       "change_val": 0.55,
       "change_pct": 0.98,
-      "k": 68.8,
-      "d": 79.6,
+      "k": 75.6,
+      "d": 69.8,
       "is_verified": true,
       "data_source": "Yahoo官方源",
-      "volume_display": "11,155 張 (-56.0% 縮量)",
-      "strategy_state": "【觀望 / 減碼賣出】",
+      "volume_display": "19 張 (-99.9% 縮量)",
+      "strategy_state": "【續抱 / 加碼買進】",
       "risk_control": "設移動停利（如退回10日線跌破，或 K < D 死叉出場）",
       "risk_badge": "🛡️ 設移動停利",
       "drop_streak": 0,
       "suggested_ratio": "維持部位",
       "valuation_display": "溢價 +0.85% (淨值:56.37)",
-      "rating": "賣出",
+      "rating": "買進",
       "confidence": "中",
       "engine": "雙軌決策規則引擎 (KD矩陣 + 連跌風控)",
-      "reason": "【軌道一 KD】【觀望 / 減碼賣出】 (9K=68.8, 9D=79.6)；【軌道二 風控】連跌0日，設常規移動停利，不干擾KD常態訊號",
+      "reason": "【軌道一 KD】【續抱 / 加碼買進】 (9K=75.6, 9D=69.8)；【軌道二 風控】連跌0日，設常規移動停利，不干擾KD常態訊號",
       "news": [
         {
           "title": "0056 元大高股息- 009816不配息，表現勝過0050 - 股市爆料同學會 - CMoney",
@@ -5425,8 +5425,8 @@
           "low": 56.35,
           "close": 56.85,
           "volume": 19109009,
-          "k": 68.8,
-          "d": 79.6
+          "k": 75.6,
+          "d": 69.8
         }
       ]
     },
@@ -5438,21 +5438,21 @@
       "prev_close": 34.72999954223633,
       "change_val": 0.1,
       "change_pct": 0.29,
-      "k": 72.4,
-      "d": 68.1,
+      "k": 83.1,
+      "d": 80.5,
       "is_verified": true,
       "data_source": "Yahoo官方源",
-      "volume_display": "57,791 張 (+120.9% 放量)",
-      "strategy_state": "【續抱 / 加碼買進】",
+      "volume_display": "26 張 (-99.9% 縮量)",
+      "strategy_state": "【超買鈍化 / 續抱不追高】",
       "risk_control": "設移動停利（如退回10日線跌破，或 K < D 死叉出場）",
       "risk_badge": "🛡️ 設移動停利",
       "drop_streak": 0,
       "suggested_ratio": "維持部位",
       "valuation_display": "溢價 +0.11% (淨值:34.79)",
-      "rating": "買進",
+      "rating": "中立",
       "confidence": "高",
       "engine": "雙軌決策規則引擎 (KD矩陣 + 連跌風控)",
-      "reason": "【軌道一 KD】【續抱 / 加碼買進】 (9K=72.4, 9D=68.1)；【軌道二 風控】連跌0日，設常規移動停利，不干擾KD常態訊號；最新新聞偏多 (1則利多資訊)",
+      "reason": "【軌道一 KD】【超買鈍化 / 續抱不追高】 (9K=83.1, 9D=80.5)；【軌道二 風控】連跌0日，設常規移動停利，不干擾KD常態訊號；最新新聞偏多 (1則利多資訊)",
       "news": [
         {
           "title": "166萬人注意！ 00878配息出爐 年報酬率飆破80%超強 - Yahoo股市",
@@ -6103,8 +6103,8 @@
           "low": 34.68,
           "close": 34.83,
           "volume": 29696140,
-          "k": 72.4,
-          "d": 68.1
+          "k": 83.1,
+          "d": 80.5
         }
       ]
     },
@@ -6116,21 +6116,21 @@
       "prev_close": 32.11000061035156,
       "change_val": -0.15,
       "change_pct": -0.47,
-      "k": 78.5,
-      "d": 74.2,
+      "k": 32.9,
+      "d": 47.5,
       "is_verified": true,
       "data_source": "Yahoo官方源",
-      "volume_display": "35,200 張 (-59.2% 縮量)",
-      "strategy_state": "【續抱 / 加碼買進】",
+      "volume_display": "116 張 (-99.9% 縮量)",
+      "strategy_state": "【觀望 / 減碼賣出】",
       "risk_control": "連跌1日：觀察重要支撐，暫不急於搶進",
       "risk_badge": "⚪ 連跌1日 (觀望)",
       "drop_streak": 1,
       "suggested_ratio": "0%",
       "valuation_display": "折價 -0.47% (淨值:32.11)",
-      "rating": "買進",
+      "rating": "賣出",
       "confidence": "高",
       "engine": "雙軌決策規則引擎 (KD矩陣 + 連跌風控)",
-      "reason": "【軌道一 KD】【續抱 / 加碼買進】 (9K=78.5, 9D=74.2)；【軌道二 風控】連跌 1 日，維持觀望支撐；最新新聞偏多 (1則利多資訊)",
+      "reason": "【軌道一 KD】【觀望 / 減碼賣出】 (9K=32.9, 9D=47.5)；【軌道二 風控】連跌 1 日，維持觀望支撐；最新新聞偏多 (1則利多資訊)",
       "news": [
         {
           "title": "【零股排行榜】盤中零股成交量TOP 20｜0050 元大台灣50、00631L 元大台灣50正2、00919 群益台灣精選高息、2330 台積電、00878 國泰永續高股息(0911)｜豐雲學堂2026 年 09 月 - sinotrade.com.tw",
@@ -6781,8 +6781,8 @@
           "low": 31.78,
           "close": 31.96,
           "volume": 124391113,
-          "k": 78.5,
-          "d": 74.2
+          "k": 32.9,
+          "d": 47.5
         }
       ]
     },
@@ -6794,21 +6794,21 @@
       "prev_close": 31.790000915527344,
       "change_val": 0.2,
       "change_pct": 0.63,
-      "k": 7.91,
-      "d": 16.34,
+      "k": 62.3,
+      "d": 41.7,
       "is_verified": true,
       "data_source": "Yahoo官方源",
-      "volume_display": "1,858 張 (-37.2% 縮量)",
-      "strategy_state": "【超賣區 / 尋求築底】",
+      "volume_display": "5 張 (-99.8% 縮量)",
+      "strategy_state": "【續抱 / 加碼買進】",
       "risk_control": "設移動停利（如退回10日線跌破，或 K < D 死叉出場）",
       "risk_badge": "🛡️ 設移動停利",
       "drop_streak": 0,
       "suggested_ratio": "維持部位",
       "valuation_display": "折價 -0.37% (淨值:32.11)",
-      "rating": "中立",
+      "rating": "買進",
       "confidence": "中",
       "engine": "雙軌決策規則引擎 (KD矩陣 + 連跌風控)",
-      "reason": "【軌道一 KD】【超賣區 / 尋求築底】 (9K=7.9, 9D=16.3)；【軌道二 風控】連跌0日，設常規移動停利，不干擾KD常態訊號",
+      "reason": "【軌道一 KD】【續抱 / 加碼買進】 (9K=62.3, 9D=41.7)；【軌道二 風控】連跌0日，設常規移動停利，不干擾KD常態訊號",
       "news": [
         {
           "title": "00720B 元大投資級公司債- AGI 喊了三年，這次真正動起來的是錢- 股市爆料同學會 - CMoney",
@@ -7459,8 +7459,8 @@
           "low": 31.94,
           "close": 31.99,
           "volume": 4567000,
-          "k": 7.9,
-          "d": 16.3
+          "k": 62.3,
+          "d": 41.7
         }
       ]
     },
@@ -7472,11 +7472,11 @@
       "prev_close": 90.4000015258789,
       "change_val": -0.1,
       "change_pct": -0.11,
-      "k": 75.3,
-      "d": 60.1,
+      "k": 29.1,
+      "d": 28.5,
       "is_verified": true,
       "data_source": "Yahoo官方源",
-      "volume_display": "14,200 張 (+96.1% 放量)",
+      "volume_display": "9 張 (-99.9% 縮量)",
       "strategy_state": "【續抱 / 加碼買進】",
       "risk_control": "連跌1日：觀察重要支撐，暫不急於搶進",
       "risk_badge": "⚪ 連跌1日 (觀望)",
@@ -7486,7 +7486,7 @@
       "rating": "買進",
       "confidence": "高",
       "engine": "雙軌決策規則引擎 (KD矩陣 + 連跌風控)",
-      "reason": "【軌道一 KD】【續抱 / 加碼買進】 (9K=75.3, 9D=60.1)；【軌道二 風控】連跌 1 日，維持觀望支撐；最新新聞偏多 (1則利多資訊)",
+      "reason": "【軌道一 KD】【續抱 / 加碼買進】 (9K=29.1, 9D=28.5)；【軌道二 風控】連跌 1 日，維持觀望支撐；最新新聞偏多 (1則利多資訊)",
       "news": [
         {
           "title": "和碩8月營收重返千億大關！AI伺服器與新品拉貨動能強勁 - Yahoo股市",
@@ -8101,8 +8101,8 @@
           "low": 89.7,
           "close": 90.3,
           "volume": 9004119,
-          "k": 75.3,
-          "d": 60.1
+          "k": 29.1,
+          "d": 28.5
         }
       ]
     },
@@ -9470,21 +9470,21 @@
       "prev_close": 18.700000762939453,
       "change_val": 0.05,
       "change_pct": 0.27,
-      "k": 23.5,
-      "d": 34.2,
+      "k": 12.1,
+      "d": 17.0,
       "is_verified": true,
       "data_source": "Yahoo官方源",
-      "volume_display": "15,400 張 (-8.3% 縮量)",
-      "strategy_state": "【觀望 / 減碼賣出】",
+      "volume_display": "25 張 (-99.9% 縮量)",
+      "strategy_state": "【超賣區 / 尋求築底】",
       "risk_control": "設移動停利（如退回10日線跌破，或 K < D 死叉出場）",
       "risk_badge": "🛡️ 設移動停利",
       "drop_streak": 0,
       "suggested_ratio": "維持部位",
       "valuation_display": "N/A (PE: 52.3x, PB: 1.0x)",
-      "rating": "賣出",
+      "rating": "中立",
       "confidence": "中",
       "engine": "雙軌決策規則引擎 (KD矩陣 + 連跌風控)",
-      "reason": "【軌道一 KD】【觀望 / 減碼賣出】 (9K=23.5, 9D=34.2)；【軌道二 風控】連跌0日，設常規移動停利，不干擾KD常態訊號",
+      "reason": "【軌道一 KD】【超賣區 / 尋求築底】 (9K=12.1, 9D=17.0)；【軌道二 風控】連跌0日，設常規移動停利，不干擾KD常態訊號",
       "news": [
         {
           "title": "2002 中鋼- 《國際早點名》沙國取消對歐油貨全球供應再受壓等8則 - 股市爆料同學會 - CMoney",
@@ -10135,8 +10135,686 @@
           "low": 18.7,
           "close": 18.75,
           "volume": 25162810,
-          "k": 23.5,
-          "d": 34.2
+          "k": 12.1,
+          "d": 17.0
+        }
+      ]
+    },
+    {
+      "symbol": "00981A.TW",
+      "name": "主動統一台股增長",
+      "latest_date": "2026-09-18",
+      "latest_close": 29.07,
+      "prev_close": 28.1299991607666,
+      "change_val": 0.94,
+      "change_pct": 3.34,
+      "k": 25.7,
+      "d": 30.1,
+      "is_verified": true,
+      "data_source": "Yahoo官方源",
+      "volume_display": "144 張 (-99.9% 縮量)",
+      "strategy_state": "【觀望 / 減碼賣出】",
+      "risk_control": "設移動停利（如退回10日線跌破，或 K < D 死叉出場）",
+      "risk_badge": "🛡️ 設移動停利",
+      "drop_streak": 0,
+      "suggested_ratio": "維持部位",
+      "valuation_display": "溢價 +3.86% (淨值:27.99)",
+      "rating": "賣出",
+      "confidence": "高",
+      "engine": "雙軌決策規則引擎 (KD矩陣 + 連跌風控)",
+      "reason": "【軌道一 KD】【觀望 / 減碼賣出】 (9K=25.7, 9D=30.1)；【軌道二 風控】連跌0日，設常規移動停利，不干擾KD常態訊號；⚠️ ETF 顯著溢價 (+3.86%)，警示追高風險；最新新聞偏多 (1則利多資訊)",
+      "news": [
+        {
+          "title": "00981A引領台股主動式ETF風騷　統一投信成為兆元俱樂部一員 - ETtoday財經雲",
+          "published": "Fri, 18 Sep 2026 04:31:00 GMT",
+          "link": "https://news.google.com/rss/articles/CBMiUkFVX3lxTE9YSnNhWGtBdzFodlRkT2htZTVtRnRjSXh5cFRSMVZOSF9WeWNUeGF3aTRNSklHV0hJcnBFc01ZdXVIUUVUUW5hRGFvU0pCVUdHT2fSAVBBVV95cUxNdXREeDZOTlBJdmp1UmdrbDJFTWNHd19QeVpWZ0lWSkZCQWtfMVNjSGhDak5oM1BRV2ZSRzBkSGxsZU5FX3V0aTMyRktqLUtPQw?oc=5",
+          "source": "ETtoday財經雲"
+        },
+        {
+          "title": "瑤池金母發錢！00981A 配息 0.63 元維持新高，年化配息率逾 8% - 經理人",
+          "published": "Tue, 01 Sep 2026 07:00:00 GMT",
+          "link": "https://news.google.com/rss/articles/CBMiYEFVX3lxTE8yVlZYQk1NdklfR0RNMG5nYTNMclBqS1p3Mnd3NkZkb3V1bEw3Sk45R21malQwam42akhDYzlnVE1zalBtbEY5a0JPakdJSkh1UjJZdmZQcU8xdURKSF94bQ?oc=5",
+          "source": "經理人"
+        },
+        {
+          "title": "九倍女戰神大戰瑤池金母！00418A對上2,693億的00981A 同一個選股池開打 - CMoney",
+          "published": "Fri, 18 Sep 2026 15:12:40 GMT",
+          "link": "https://news.google.com/rss/articles/CBMiWEFVX3lxTE5KZW9ZWnFrcUVWRGpGSjVWdVM2ZThJN21rVWthMmtWemhpdFZ4NHVWdUNVTk5XaVl4UzJzRGhoT1JmU3lxZk9CYVkwbUNJajUzZ2hPRVZKNWE?oc=5",
+          "source": "CMoney"
+        },
+        {
+          "title": "【零股排行榜】盤中零股成交量TOP 20｜00919 群益台灣精選高息、0050 元大台灣50、2330 台積電、00981A 主動統一台股增長、2303 聯電 (0916)｜豐雲學堂2026 年 09 月 - sinotrade.com.tw",
+          "published": "Wed, 16 Sep 2026 07:00:00 GMT",
+          "link": "https://news.google.com/rss/articles/CBMigAVBVV95cUxONUFjdmtnNmJ6THgxUHh2ZlR0Zll3LW1MVmI3Y0Q2TzlPMHVWWTRhZVRNQlI1NTRINVNULTZyWGlLazdWOWR3bDVIYWJKaklGd2ZLX25XRXpYQXlOVDF5TjhDTWR1NURHV1lHZElYQVE1Vmp1NnBVV2MzVnVzSjhLR2MxZndOTUs1dzl2MDZfTEwyOWpxdno0NVRXdmo2UTZmbUdsNlVKYk5DaC1zMjBPX1Q0anlyMi1FRG1INGVRNF9NY094RTNJTUJ0TGREc2xwTVhIR3E4NFg0SDcxY1hrNGNBQi02ZFZrTVhwcWRSOVVlNzFWSkt5R0s2NV9uLTNuTVhrb0FGZ2hPSEVoblNua1l4VGxRSUdueFBYclpKM2Vsakx4TjhhTEp6MXlzYzlhbHgyY0g5czF2ZlIxRnZmeDJnSE5FSnlOMlBmVjQ1bE9qN0VwVXpLREVWZTVUanE1Z3J3cHFibE5HWTByQUR3dlQ5UDE2UXFBS0NlZnZGbVNkUktqRVkzMlUzbDlkNmU4Qm5UUmlkcEIzRUotRmxLMFFlazhpcTZCOWhvZGhncTVwSF9PXzFoRjlZcW9lMVoyTHkxNERZQUs0OWl0VVVhQnNwdFR3MVI3cHc5OWRxa1JYb0FWa0dxUUxDQTYtUEhWLUNjSk5MWVRPZHJYc1JEZlBKbjQ3UEtuWTJrQS1Ra1ZVWDNWc2Z0SFBnSUFLWC1pS0dxS2R5RjFnREEzSFE0SkpxSEJfWk5XYTM5ZjVwbVg0dm91czVDdWlFb0ZFSzVUNlM5RHVxTzZ2V0lmd0EyQmNvelpfS2FaWE1RaV9OR1YtTDhOTEppYXVRd3JqLTRr?oc=5",
+          "source": "sinotrade.com.tw"
+        },
+        {
+          "title": "主動式ETF退潮2／主動式ETF誰掉粉最兇？ 這檔一口氣少13萬人 - 三立新聞",
+          "published": "Sat, 19 Sep 2026 06:34:25 GMT",
+          "link": "https://news.google.com/rss/articles/CBMiS0FVX3lxTE4tT1d3NUp6dHZEVmt2SERUQVpuc0xqNTZLZEpNNFI4ZENnQlFnQ3lHYmtmUWNRc0NZUnJaQWIxM21DaGV6eTRJMU5nQQ?oc=5",
+          "source": "三立新聞"
+        }
+      ],
+      "citations": [
+        {
+          "title": "00981A引領台股主動式ETF風騷　統一投信成為兆元俱樂部一員 - ETtoday財經雲",
+          "published": "Fri, 18 Sep 2026 04:31:00 GMT",
+          "link": "https://news.google.com/rss/articles/CBMiUkFVX3lxTE9YSnNhWGtBdzFodlRkT2htZTVtRnRjSXh5cFRSMVZOSF9WeWNUeGF3aTRNSklHV0hJcnBFc01ZdXVIUUVUUW5hRGFvU0pCVUdHT2fSAVBBVV95cUxNdXREeDZOTlBJdmp1UmdrbDJFTWNHd19QeVpWZ0lWSkZCQWtfMVNjSGhDak5oM1BRV2ZSRzBkSGxsZU5FX3V0aTMyRktqLUtPQw?oc=5",
+          "source": "ETtoday財經雲"
+        },
+        {
+          "title": "瑤池金母發錢！00981A 配息 0.63 元維持新高，年化配息率逾 8% - 經理人",
+          "published": "Tue, 01 Sep 2026 07:00:00 GMT",
+          "link": "https://news.google.com/rss/articles/CBMiYEFVX3lxTE8yVlZYQk1NdklfR0RNMG5nYTNMclBqS1p3Mnd3NkZkb3V1bEw3Sk45R21malQwam42akhDYzlnVE1zalBtbEY5a0JPakdJSkh1UjJZdmZQcU8xdURKSF94bQ?oc=5",
+          "source": "經理人"
+        },
+        {
+          "title": "九倍女戰神大戰瑤池金母！00418A對上2,693億的00981A 同一個選股池開打 - CMoney",
+          "published": "Fri, 18 Sep 2026 15:12:40 GMT",
+          "link": "https://news.google.com/rss/articles/CBMiWEFVX3lxTE5KZW9ZWnFrcUVWRGpGSjVWdVM2ZThJN21rVWthMmtWemhpdFZ4NHVWdUNVTk5XaVl4UzJzRGhoT1JmU3lxZk9CYVkwbUNJajUzZ2hPRVZKNWE?oc=5",
+          "source": "CMoney"
+        }
+      ],
+      "history": [
+        {
+          "date": "2026-06-29",
+          "open": 29.92,
+          "high": 30.41,
+          "low": 29.61,
+          "close": 29.94,
+          "volume": 163213917,
+          "k": 35.3,
+          "d": 55.4
+        },
+        {
+          "date": "2026-06-30",
+          "open": 30.55,
+          "high": 31.3,
+          "low": 30.51,
+          "close": 31.28,
+          "volume": 229675287,
+          "k": 42.8,
+          "d": 51.2
+        },
+        {
+          "date": "2026-07-01",
+          "open": 32.07,
+          "high": 32.23,
+          "low": 31.55,
+          "close": 32.0,
+          "volume": 307740467,
+          "k": 56.1,
+          "d": 52.8
+        },
+        {
+          "date": "2026-07-02",
+          "open": 31.37,
+          "high": 32.13,
+          "low": 31.12,
+          "close": 32.05,
+          "volume": 156939446,
+          "k": 65.5,
+          "d": 57.1
+        },
+        {
+          "date": "2026-07-03",
+          "open": 31.49,
+          "high": 32.33,
+          "low": 31.2,
+          "close": 32.26,
+          "volume": 174304244,
+          "k": 74.3,
+          "d": 62.8
+        },
+        {
+          "date": "2026-07-06",
+          "open": 32.45,
+          "high": 32.45,
+          "low": 31.08,
+          "close": 31.2,
+          "volume": 241853798,
+          "k": 68.2,
+          "d": 64.6
+        },
+        {
+          "date": "2026-07-07",
+          "open": 31.2,
+          "high": 31.3,
+          "low": 29.75,
+          "close": 29.84,
+          "volume": 330931675,
+          "k": 48.1,
+          "d": 59.1
+        },
+        {
+          "date": "2026-07-08",
+          "open": 29.96,
+          "high": 30.1,
+          "low": 29.25,
+          "close": 29.75,
+          "volume": 192669685,
+          "k": 37.3,
+          "d": 51.8
+        },
+        {
+          "date": "2026-07-09",
+          "open": 29.91,
+          "high": 30.54,
+          "low": 29.78,
+          "close": 29.95,
+          "volume": 127590301,
+          "k": 32.2,
+          "d": 45.3
+        },
+        {
+          "date": "2026-07-10",
+          "open": 29.95,
+          "high": 29.95,
+          "low": 29.95,
+          "close": 29.95,
+          "volume": 0,
+          "k": 28.7,
+          "d": 39.8
+        },
+        {
+          "date": "2026-07-13",
+          "open": 30.38,
+          "high": 30.55,
+          "low": 29.21,
+          "close": 29.35,
+          "volume": 170161992,
+          "k": 20.6,
+          "d": 33.4
+        },
+        {
+          "date": "2026-07-14",
+          "open": 29.15,
+          "high": 29.3,
+          "low": 27.34,
+          "close": 28.4,
+          "volume": 450692976,
+          "k": 20.6,
+          "d": 29.1
+        },
+        {
+          "date": "2026-07-15",
+          "open": 28.75,
+          "high": 29.46,
+          "low": 28.51,
+          "close": 29.38,
+          "volume": 169674674,
+          "k": 27.1,
+          "d": 28.4
+        },
+        {
+          "date": "2026-07-16",
+          "open": 28.88,
+          "high": 29.2,
+          "low": 28.5,
+          "close": 28.95,
+          "volume": 121948639,
+          "k": 28.5,
+          "d": 28.5
+        },
+        {
+          "date": "2026-07-17",
+          "open": 27.8,
+          "high": 27.8,
+          "low": 26.43,
+          "close": 26.43,
+          "volume": 502771495,
+          "k": 19.0,
+          "d": 25.3
+        },
+        {
+          "date": "2026-07-20",
+          "open": 26.43,
+          "high": 26.6,
+          "low": 25.27,
+          "close": 25.9,
+          "volume": 267001173,
+          "k": 16.7,
+          "d": 22.4
+        },
+        {
+          "date": "2026-07-21",
+          "open": 26.32,
+          "high": 27.72,
+          "low": 26.32,
+          "close": 27.72,
+          "volume": 198267347,
+          "k": 26.6,
+          "d": 23.8
+        },
+        {
+          "date": "2026-07-22",
+          "open": 28.64,
+          "high": 28.88,
+          "low": 28.35,
+          "close": 28.5,
+          "volume": 182037477,
+          "k": 38.1,
+          "d": 28.6
+        },
+        {
+          "date": "2026-07-23",
+          "open": 28.75,
+          "high": 29.12,
+          "low": 28.46,
+          "close": 28.69,
+          "volume": 161867249,
+          "k": 47.0,
+          "d": 34.7
+        },
+        {
+          "date": "2026-07-24",
+          "open": 28.1,
+          "high": 28.59,
+          "low": 27.53,
+          "close": 27.54,
+          "volume": 162668037,
+          "k": 49.4,
+          "d": 39.6
+        },
+        {
+          "date": "2026-07-27",
+          "open": 27.49,
+          "high": 27.62,
+          "low": 26.75,
+          "close": 27.53,
+          "volume": 160186878,
+          "k": 50.9,
+          "d": 43.4
+        },
+        {
+          "date": "2026-07-28",
+          "open": 26.13,
+          "high": 26.38,
+          "low": 25.45,
+          "close": 25.45,
+          "volume": 326811513,
+          "k": 35.5,
+          "d": 40.7
+        },
+        {
+          "date": "2026-07-29",
+          "open": 25.5,
+          "high": 25.58,
+          "low": 23.2,
+          "close": 23.85,
+          "volume": 541301082,
+          "k": 27.3,
+          "d": 36.3
+        },
+        {
+          "date": "2026-07-30",
+          "open": 23.26,
+          "high": 25.18,
+          "low": 23.26,
+          "close": 23.76,
+          "volume": 489311291,
+          "k": 21.4,
+          "d": 31.3
+        },
+        {
+          "date": "2026-07-31",
+          "open": 26.06,
+          "high": 26.13,
+          "low": 25.86,
+          "close": 26.13,
+          "volume": 871839023,
+          "k": 30.7,
+          "d": 31.1
+        },
+        {
+          "date": "2026-08-03",
+          "open": 26.12,
+          "high": 27.49,
+          "low": 26.12,
+          "close": 27.11,
+          "volume": 433005358,
+          "k": 42.5,
+          "d": 34.9
+        },
+        {
+          "date": "2026-08-04",
+          "open": 27.13,
+          "high": 27.85,
+          "low": 26.91,
+          "close": 27.58,
+          "volume": 271998445,
+          "k": 53.0,
+          "d": 40.9
+        },
+        {
+          "date": "2026-08-05",
+          "open": 28.86,
+          "high": 29.0,
+          "low": 28.4,
+          "close": 28.46,
+          "volume": 239101627,
+          "k": 65.6,
+          "d": 49.1
+        },
+        {
+          "date": "2026-08-06",
+          "open": 28.32,
+          "high": 28.98,
+          "low": 27.94,
+          "close": 28.84,
+          "volume": 174250410,
+          "k": 76.1,
+          "d": 58.1
+        },
+        {
+          "date": "2026-08-07",
+          "open": 28.92,
+          "high": 28.92,
+          "low": 27.86,
+          "close": 28.03,
+          "volume": 183519993,
+          "k": 78.5,
+          "d": 64.9
+        },
+        {
+          "date": "2026-08-10",
+          "open": 28.44,
+          "high": 28.88,
+          "low": 28.35,
+          "close": 28.53,
+          "volume": 157633078,
+          "k": 83.0,
+          "d": 70.9
+        },
+        {
+          "date": "2026-08-11",
+          "open": 28.46,
+          "high": 28.75,
+          "low": 28.21,
+          "close": 28.73,
+          "volume": 112313768,
+          "k": 87.1,
+          "d": 76.3
+        },
+        {
+          "date": "2026-08-12",
+          "open": 28.89,
+          "high": 29.36,
+          "low": 28.89,
+          "close": 29.34,
+          "volume": 167873348,
+          "k": 91.2,
+          "d": 81.3
+        },
+        {
+          "date": "2026-08-13",
+          "open": 29.96,
+          "high": 30.18,
+          "low": 29.68,
+          "close": 29.95,
+          "volume": 205891598,
+          "k": 92.2,
+          "d": 84.9
+        },
+        {
+          "date": "2026-08-14",
+          "open": 30.29,
+          "high": 30.53,
+          "low": 30.07,
+          "close": 30.22,
+          "volume": 301417518,
+          "k": 92.0,
+          "d": 87.3
+        },
+        {
+          "date": "2026-08-17",
+          "open": 30.24,
+          "high": 30.57,
+          "low": 30.06,
+          "close": 30.39,
+          "volume": 209372876,
+          "k": 92.4,
+          "d": 89.0
+        },
+        {
+          "date": "2026-08-18",
+          "open": 30.48,
+          "high": 30.5,
+          "low": 29.5,
+          "close": 29.61,
+          "volume": 214997075,
+          "k": 83.1,
+          "d": 87.0
+        },
+        {
+          "date": "2026-08-19",
+          "open": 28.65,
+          "high": 29.54,
+          "low": 28.65,
+          "close": 29.06,
+          "volume": 232578021,
+          "k": 70.2,
+          "d": 81.4
+        },
+        {
+          "date": "2026-08-20",
+          "open": 29.48,
+          "high": 29.56,
+          "low": 28.75,
+          "close": 29.25,
+          "volume": 144943178,
+          "k": 61.5,
+          "d": 74.8
+        },
+        {
+          "date": "2026-08-21",
+          "open": 29.11,
+          "high": 29.12,
+          "low": 28.62,
+          "close": 28.72,
+          "volume": 132738503,
+          "k": 48.2,
+          "d": 65.9
+        },
+        {
+          "date": "2026-08-24",
+          "open": 28.73,
+          "high": 29.02,
+          "low": 28.45,
+          "close": 28.47,
+          "volume": 112968698,
+          "k": 32.4,
+          "d": 54.8
+        },
+        {
+          "date": "2026-08-25",
+          "open": 28.1,
+          "high": 28.77,
+          "low": 27.72,
+          "close": 28.77,
+          "volume": 197498121,
+          "k": 33.9,
+          "d": 47.8
+        },
+        {
+          "date": "2026-08-26",
+          "open": 28.66,
+          "high": 29.45,
+          "low": 28.42,
+          "close": 29.44,
+          "volume": 149673700,
+          "k": 42.7,
+          "d": 46.1
+        },
+        {
+          "date": "2026-08-27",
+          "open": 29.68,
+          "high": 29.88,
+          "low": 29.33,
+          "close": 29.52,
+          "volume": 134070293,
+          "k": 49.5,
+          "d": 47.3
+        },
+        {
+          "date": "2026-08-28",
+          "open": 29.83,
+          "high": 30.29,
+          "low": 29.75,
+          "close": 30.09,
+          "volume": 215486505,
+          "k": 61.4,
+          "d": 52.0
+        },
+        {
+          "date": "2026-08-31",
+          "open": 29.09,
+          "high": 29.5,
+          "low": 28.93,
+          "close": 29.4,
+          "volume": 233262648,
+          "k": 62.8,
+          "d": 55.6
+        },
+        {
+          "date": "2026-09-01",
+          "open": 29.58,
+          "high": 30.57,
+          "low": 29.58,
+          "close": 30.37,
+          "volume": 232554113,
+          "k": 72.8,
+          "d": 61.3
+        },
+        {
+          "date": "2026-09-02",
+          "open": 30.15,
+          "high": 30.25,
+          "low": 29.7,
+          "close": 29.73,
+          "volume": 177773020,
+          "k": 72.1,
+          "d": 64.9
+        },
+        {
+          "date": "2026-09-03",
+          "open": 29.91,
+          "high": 29.96,
+          "low": 29.11,
+          "close": 29.13,
+          "volume": 151992946,
+          "k": 64.5,
+          "d": 64.8
+        },
+        {
+          "date": "2026-09-04",
+          "open": 29.77,
+          "high": 29.86,
+          "low": 29.16,
+          "close": 29.77,
+          "volume": 112331270,
+          "k": 67.0,
+          "d": 65.5
+        },
+        {
+          "date": "2026-09-07",
+          "open": 30.19,
+          "high": 30.39,
+          "low": 30.01,
+          "close": 30.12,
+          "volume": 168547613,
+          "k": 71.0,
+          "d": 67.4
+        },
+        {
+          "date": "2026-09-08",
+          "open": 30.2,
+          "high": 30.27,
+          "low": 29.52,
+          "close": 29.73,
+          "volume": 140109140,
+          "k": 63.6,
+          "d": 66.1
+        },
+        {
+          "date": "2026-09-09",
+          "open": 29.94,
+          "high": 30.35,
+          "low": 29.82,
+          "close": 29.92,
+          "volume": 125219881,
+          "k": 62.5,
+          "d": 64.9
+        },
+        {
+          "date": "2026-09-10",
+          "open": 29.66,
+          "high": 29.92,
+          "low": 29.6,
+          "close": 29.89,
+          "volume": 76761854,
+          "k": 61.2,
+          "d": 63.7
+        },
+        {
+          "date": "2026-09-11",
+          "open": 29.35,
+          "high": 29.55,
+          "low": 29.16,
+          "close": 29.44,
+          "volume": 141748708,
+          "k": 48.3,
+          "d": 58.6
+        },
+        {
+          "date": "2026-09-14",
+          "open": 28.89,
+          "high": 29.49,
+          "low": 28.63,
+          "close": 29.32,
+          "volume": 127708906,
+          "k": 45.3,
+          "d": 54.1
+        },
+        {
+          "date": "2026-09-15",
+          "open": 29.3,
+          "high": 29.42,
+          "low": 28.85,
+          "close": 28.86,
+          "volume": 161099140,
+          "k": 34.5,
+          "d": 47.6
+        },
+        {
+          "date": "2026-09-16",
+          "open": 28.3,
+          "high": 28.66,
+          "low": 28.21,
+          "close": 28.33,
+          "volume": 140741802,
+          "k": 24.9,
+          "d": 40.0
+        },
+        {
+          "date": "2026-09-17",
+          "open": 28.66,
+          "high": 29.09,
+          "low": 28.1,
+          "close": 28.13,
+          "volume": 194420061,
+          "k": 17.0,
+          "d": 32.4
+        },
+        {
+          "date": "2026-09-18",
+          "open": 28.68,
+          "high": 29.07,
+          "low": 28.68,
+          "close": 29.07,
+          "volume": 144209295,
+          "k": 25.7,
+          "d": 30.1
         }
       ]
     }
