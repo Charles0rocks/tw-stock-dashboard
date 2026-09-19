@@ -360,30 +360,54 @@ async function fetchFromYahooWithSuffixFallback(rawCode) {
   let lastError = null;
   for (const sym of candidates) {
     try {
-      const chartUrl = `https://tw.stock.yahoo.com/_td-stock/api/resource/FinanceChartService.ApacLibraCharts;period=d;symbols=%5B%22${encodeURIComponent(sym)}%22%5D`;
-      const listUrl = `https://tw.stock.yahoo.com/_td-stock/api/resource/StockServices.stockList;symbols=%5B%22${encodeURIComponent(sym)}%22%5D`;
+      let chart = null;
+      let meta = {};
+      let quote = null;
+      let ts = [];
+      let listInfo = {};
 
-      const [chartRes, listRes] = await Promise.all([
-        fetchJson(chartUrl),
-        fetchJson(listUrl).catch(() => null)
-      ]);
+      // Try 1: Yahoo Taiwan ApacLibraCharts
+      try {
+        const chartUrl = `https://tw.stock.yahoo.com/_td-stock/api/resource/FinanceChartService.ApacLibraCharts;period=d;symbols=%5B%22${encodeURIComponent(sym)}%22%5D`;
+        const listUrl = `https://tw.stock.yahoo.com/_td-stock/api/resource/StockServices.stockList;symbols=%5B%22${encodeURIComponent(sym)}%22%5D`;
 
-      if (!chartRes || !chartRes[0] || !chartRes[0].chart) {
-        continue;
+        const [chartRes, listRes] = await Promise.all([
+          fetchJson(chartUrl, 3500),
+          fetchJson(listUrl, 2500).catch(() => null)
+        ]);
+
+        if (chartRes && chartRes[0] && chartRes[0].chart) {
+          chart = chartRes[0].chart;
+          meta = chart.meta || {};
+          quote = chart.indicators?.quote?.[0];
+          ts = chart.timestamp || [];
+          listInfo = (listRes && listRes[0]) ? listRes[0] : {};
+        }
+      } catch (e) {
+        // Fallback to query1
       }
 
-      const chart = chartRes[0].chart;
-      const meta = chart.meta || {};
-      const quote = chart.indicators?.quote?.[0];
-      const ts = chart.timestamp || [];
+      // Try 2: Yahoo Global Query1 API (works worldwide from any cloud serverless IP)
+      if (!quote || !quote.close || quote.close.length === 0) {
+        try {
+          const q1Url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?interval=1d&range=1y`;
+          const q1Res = await fetchJson(q1Url, 4000);
+          if (q1Res && q1Res.chart && q1Res.chart.result && q1Res.chart.result[0]) {
+            const r = q1Res.chart.result[0];
+            meta = r.meta || {};
+            quote = r.indicators?.quote?.[0];
+            ts = r.timestamp || [];
+          }
+        } catch (e) {
+          // Both failed
+        }
+      }
 
       if (!quote || !quote.close || quote.close.length === 0) {
         continue;
       }
 
-      const listInfo = (listRes && listRes[0]) ? listRes[0] : {};
-
-      let name = STOCK_NAME_MAP[baseCode] || STOCK_NAME_MAP[sym] || meta.name || listInfo.symbolName || baseCode;
+      let name = STOCK_NAME_MAP[baseCode] || STOCK_NAME_MAP[sym] || meta.name || listInfo.symbolName || meta.shortName || baseCode;
       
       const validCloses = quote.close.filter(c => c !== null && !isNaN(c));
       const latestQuoteClose = validCloses[validCloses.length - 1] || 0;
