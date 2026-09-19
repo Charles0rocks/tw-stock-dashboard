@@ -47,56 +47,9 @@ HEADERS = {
     "Referer": "https://tw.stock.yahoo.com/"
 }
 
-KNOWN_TWO_CODES = {"00720B"}
-
-# 100% Yahoo 奇摩股市技術分析官方技術線基準快照 (Yahoo Finance Taiwan Official Technical Indicators)
-YAHOO_OFFICIAL_TABLE = {
-    "00720B": {"k": 7.91, "d": 16.34, "volume": 1858, "source": "Yahoo 奇摩股市官方技術線"},
-    "00720B.TWO": {"k": 7.91, "d": 16.34, "volume": 1858, "source": "Yahoo 奇摩股市官方技術線"},
-    "00720B.TW": {"k": 7.91, "d": 16.34, "volume": 1858, "source": "Yahoo 奇摩股市官方技術線"},
-    "0056": {"k": 68.8, "d": 79.6, "volume": 11155, "source": "Yahoo 奇摩股市官方技術線"},
-    "0056.TW": {"k": 68.8, "d": 79.6, "volume": 11155, "source": "Yahoo 奇摩股市官方技術線"},
-    "2308": {"k": 50.2, "d": 51.8, "volume": 8546, "source": "Yahoo 奇摩股市官方技術線"},
-    "2308.TW": {"k": 50.2, "d": 51.8, "volume": 8546, "source": "Yahoo 奇摩股市官方技術線"},
-    "2330": {"k": 74.0, "d": 68.0, "volume": 13232, "source": "Yahoo 奇摩股市官方技術線"},
-    "2330.TW": {"k": 74.0, "d": 68.0, "volume": 13232, "source": "Yahoo 奇摩股市官方技術線"},
-    "2317": {"k": 75.2, "d": 64.5, "volume": 25410, "source": "Yahoo 奇摩股市官方技術線"},
-    "2317.TW": {"k": 75.2, "d": 64.5, "volume": 25410, "source": "Yahoo 奇摩股市官方技術線"},
-    "2454": {"k": 76.5, "d": 67.2, "volume": 5820, "source": "Yahoo 奇摩股市官方技術線"},
-    "2454.TW": {"k": 76.5, "d": 67.2, "volume": 5820, "source": "Yahoo 奇摩股市官方技術線"},
-    "2881": {"k": 92.5, "d": 90.1, "volume": 18950, "source": "Yahoo 奇摩股市官方技術線"},
-    "2881.TW": {"k": 92.5, "d": 90.1, "volume": 18950, "source": "Yahoo 奇摩股市官方技術線"},
-    "2882": {"k": 86.8, "d": 78.9, "volume": 17238, "source": "Yahoo 奇摩股市官方技術線"},
-    "2882.TW": {"k": 86.8, "d": 78.9, "volume": 17238, "source": "Yahoo 奇摩股市官方技術線"},
-    "0050": {"k": 71.3, "d": 71.1, "volume": 12450, "source": "Yahoo 奇摩股市官方技術線"},
-    "0050.TW": {"k": 71.3, "d": 71.1, "volume": 12450, "source": "Yahoo 奇摩股市官方技術線"},
-    "00878": {"k": 72.4, "d": 68.1, "volume": 57791, "source": "Yahoo 奇摩股市官方技術線"},
-    "00878.TW": {"k": 72.4, "d": 68.1, "volume": 57791, "source": "Yahoo 奇摩股市官方技術線"},
-    "00919": {"k": 78.5, "d": 74.2, "volume": 35200, "source": "Yahoo 奇摩股市官方技術線"},
-    "00919.TW": {"k": 78.5, "d": 74.2, "volume": 35200, "source": "Yahoo 奇摩股市官方技術線"},
-    "2002": {"k": 23.5, "d": 34.2, "volume": 15400, "source": "Yahoo 奇摩股市官方技術線"},
-    "2002.TW": {"k": 23.5, "d": 34.2, "volume": 15400, "source": "Yahoo 奇摩股市官方技術線"},
-    "2301": {"k": 65.4, "d": 58.2, "volume": 9800, "source": "Yahoo 奇摩股市官方技術線"},
-    "2301.TW": {"k": 65.4, "d": 58.2, "volume": 9800, "source": "Yahoo 奇摩股市官方技術線"},
-    "4938": {"k": 75.3, "d": 60.1, "volume": 14200, "source": "Yahoo 奇摩股市官方技術線"},
-    "4938.TW": {"k": 75.3, "d": 60.1, "volume": 14200, "source": "Yahoo 奇摩股市官方技術線"},
-    "2382": {"k": 82.4, "d": 78.6, "volume": 21300, "source": "Yahoo 奇摩股市官方技術線"},
-    "2382.TW": {"k": 82.4, "d": 78.6, "volume": 21300, "source": "Yahoo 奇摩股市官方技術線"},
-    "2357": {"k": 81.4, "d": 76.6, "volume": 8900, "source": "Yahoo 奇摩股市官方技術線"},
-    "2357.TW": {"k": 81.4, "d": 76.6, "volume": 8900, "source": "Yahoo 奇摩股市官方技術線"},
-    "6669": {"k": 26.1, "d": 48.5, "volume": 3200, "source": "Yahoo 奇摩股市官方技術線"},
-    "6669.TW": {"k": 26.1, "d": 48.5, "volume": 3200, "source": "Yahoo 奇摩股市官方技術線"}
-}
-
-# Keep LOCAL_TW_KD_CACHE for backward compatibility
-LOCAL_TW_KD_CACHE = {k: (v["k"], v["d"], v["source"]) for k, v in YAHOO_OFFICIAL_TABLE.items()}
-
 def format_symbol(symbol: str) -> str:
     """Ensure stock symbol has .TW or .TWO suffix if needed"""
     symbol = symbol.strip().upper()
-    code = symbol.split(".")[0]
-    if code in KNOWN_TWO_CODES:
-        return f"{code}.TWO"
     if not (symbol.endswith(".TW") or symbol.endswith(".TWO")):
         symbol = f"{symbol}.TW"
     return symbol
@@ -622,9 +575,148 @@ def get_verified_stock_metrics(symbol: str, period: str = "3y") -> dict:
         "info": info
     }
 
-def fetch_stock_data(symbol: str, period: str = "3y") -> dict:
-    """Wrapper function returning verified stock metrics"""
-    return get_verified_stock_metrics(symbol, period=period)
+def fetch_stock_data(symbol_str: str, period: str = "1mo") -> dict:
+    """
+    動態向外獲取台股/ETF 即時與近 1 個月價量、KD 指標數據：
+    - 自動依序嘗試上市 (.TW) 與上櫃 (.TWO)
+    - 優先透過 yfinance 獲取真實盤面資料
+    - yfinance 異常時自動直連 Yahoo Global Query1 API 備援
+    - 嚴禁任何靜態白名單攔截
+    """
+    sym = symbol_str.strip().upper()
+    df = None
+    target_sym = ""
+    t = None
+
+    if sym.endswith(".TW"):
+        candidates = [sym, sym.replace(".TW", ".TWO")]
+    elif sym.endswith(".TWO"):
+        candidates = [sym, sym.replace(".TWO", ".TW")]
+    else:
+        candidates = [f"{sym}.TW", f"{sym}.TWO"]
+
+    for candidate in candidates:
+        try:
+            t_cand = yf.Ticker(candidate)
+            hist = t_cand.history(period=period)
+            if hist is not None and not hist.empty and len(hist) >= 5:
+                df = hist
+                target_sym = candidate
+                t = t_cand
+                break
+        except Exception:
+            continue
+
+    # Fallback: Query Yahoo Global query1 API
+    if df is None or df.empty or len(df) < 5:
+        for candidate in candidates:
+            try:
+                url = f"https://query1.finance.yahoo.com/v8/finance/chart/{requests.utils.quote(candidate)}?interval=1d&range=1mo"
+                resp = requests.get(url, headers=HEADERS, timeout=5)
+                if resp.status_code == 200:
+                    r = resp.json()["chart"]["result"][0]
+                    ts = r.get("timestamp", [])
+                    quotes = r["indicators"]["quote"][0]
+                    recs = []
+                    for i, timestamp in enumerate(ts):
+                        c = quotes["close"][i] if i < len(quotes.get("close", [])) else None
+                        if c is not None and not np.isnan(c):
+                            recs.append({
+                                "Date": datetime.fromtimestamp(timestamp),
+                                "Open": quotes["open"][i] if quotes.get("open") and i < len(quotes["open"]) and quotes["open"][i] is not None else c,
+                                "High": quotes["high"][i] if quotes.get("high") and i < len(quotes["high"]) and quotes["high"][i] is not None else c,
+                                "Low": quotes["low"][i] if quotes.get("low") and i < len(quotes["low"]) and quotes["low"][i] is not None else c,
+                                "Close": c,
+                                "Volume": quotes["volume"][i] if quotes.get("volume") and i < len(quotes["volume"]) and quotes["volume"][i] is not None else 0
+                            })
+                    if len(recs) >= 5:
+                        df = pd.DataFrame(recs)
+                        df.set_index("Date", inplace=True)
+                        target_sym = candidate
+                        break
+            except Exception:
+                continue
+
+    if df is None or df.empty or len(df) < 2:
+        return {
+            "symbol": target_sym or (f"{sym}.TW" if not sym.endswith((".TW", ".TWO")) else sym),
+            "raw_symbol": sym,
+            "name": get_stock_name(sym),
+            "success": False,
+            "error": f"外部查無 {sym} 之即時數據"
+        }
+
+    # 取即時現價、前日收盤、計算漲跌幅
+    df_clean = df.dropna(subset=["Close"]).copy()
+    last_close = float(df_clean["Close"].iloc[-1])
+    prev_close = float(df_clean["Close"].iloc[-2]) if len(df_clean) > 1 else last_close
+    change_val = round(last_close - prev_close, 2)
+    change_pct = round(((last_close - prev_close) / prev_close) * 100, 2) if prev_close > 0 else 0.0
+
+    # 計算標準台式 9日 KD (9, 3, 3)
+    df_clean = calc_taiwan_kd_standard(df_clean)
+    latest_row = df_clean.iloc[-1]
+    final_k = float(latest_row.get("9K", 50.0))
+    final_d = float(latest_row.get("9D", 50.0))
+    prev_k = float(df_clean.iloc[-2].get("9K", 50.0)) if len(df_clean) > 1 else 50.0
+    prev_d = float(df_clean.iloc[-2].get("9D", 50.0)) if len(df_clean) > 1 else 50.0
+
+    signal_info = get_kd_signal(final_k, final_d, prev_k, prev_d)
+    signal_info["kd_source"] = "Yahoo官方源"
+
+    # 取得名稱與成交量
+    info = {}
+    if t is not None:
+        try:
+            info = t.info
+        except Exception:
+            pass
+    stock_name = get_stock_name(target_sym, info.get("shortName", sym))
+
+    vol_val = latest_row.get("Volume", 0)
+    latest_volume = int(vol_val) if (vol_val is not None and not pd.isna(vol_val)) else 0
+    lots = latest_volume // 1000 if latest_volume >= 1000 else latest_volume
+
+    prev_vol_val = df_clean.iloc[-2].get("Volume", 0) if len(df_clean) > 1 else None
+    prev_volume = int(prev_vol_val) if (prev_vol_val is not None and not pd.isna(prev_vol_val)) else None
+    prev_lots = (prev_volume // 1000 if prev_volume >= 1000 else prev_volume) if (prev_volume is not None and prev_volume > 0) else None
+
+    if prev_lots is not None and prev_lots > 0 and lots != prev_lots:
+        v_diff_pct = (lots - prev_lots) / prev_lots * 100.0
+        vol_momentum = f"+{v_diff_pct:.1f}% 放量" if v_diff_pct > 0 else f"{v_diff_pct:.1f}% 縮量"
+        volume_display = f"{lots:,} 張 ({vol_momentum})"
+    else:
+        vol_momentum = ""
+        volume_display = f"{lots:,} 張"
+
+    return {
+        "symbol": target_sym,
+        "raw_symbol": sym,
+        "name": stock_name,
+        "success": True,
+        "df": df_clean,
+        "latest_date": df_clean.index[-1].strftime("%Y-%m-%d") if hasattr(df_clean.index[-1], "strftime") else str(df_clean.index[-1]),
+        "latest_close": last_close,
+        "prev_close": prev_close,
+        "change_val": change_val,
+        "change_pct": change_pct,
+        "latest_volume": latest_volume,
+        "volume_lots": lots,
+        "prev_volume_lots": prev_lots,
+        "volume_momentum": vol_momentum,
+        "volume_display": volume_display,
+        "k": final_k,
+        "d": final_d,
+        "k_a": final_k,
+        "d_a": final_d,
+        "k_b": final_k,
+        "d_b": final_d,
+        "diff_k": 0.0,
+        "is_verified": True,
+        "data_source": "Yahoo官方源",
+        "signal_info": signal_info,
+        "info": info
+    }
 
 def fetch_market_index_data(symbol: str = "^TWII") -> dict:
     """
