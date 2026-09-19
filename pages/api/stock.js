@@ -420,7 +420,8 @@ async function fetchFromYahooWithSuffixFallback(rawCode) {
       const history = [];
       const startIdx = Math.max(0, ts.length - 60);
       for (let i = startIdx; i < ts.length; i++) {
-        const dStr = new Date(ts[i] * 1000).toISOString().slice(0, 10);
+        const dObj = new Date(ts[i] * 1000);
+        const dStr = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Taipei' }).format(dObj);
         history.push({
           date: dStr,
           open: quote.open[i] ?? quote.close[i],
