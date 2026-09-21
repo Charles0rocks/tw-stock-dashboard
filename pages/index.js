@@ -25,7 +25,7 @@ export async function getServerSideProps({ res }) {
 
   if (html) {
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.setHeader('Cache-Control', 'public, max-age=60, s-maxage=120, stale-while-revalidate=300');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
     res.write(html);
     res.end();
   } else {
