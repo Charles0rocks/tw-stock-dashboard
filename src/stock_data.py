@@ -10,7 +10,7 @@ import pandas as pd
 import numpy as np
 import requests
 import re
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 
 # Common Taiwan stock ticker to Traditional Chinese name mapping
 STOCK_NAME_MAP = {
@@ -569,7 +569,7 @@ def get_verified_stock_metrics(symbol: str, period: str = "3y") -> dict:
         "info": info
     }
 
-def fetch_stock_data(symbol_str: str, period: str = "1mo") -> dict:
+def fetch_stock_data(symbol_str: str, period: str = "1mo", refresh_time: float = None) -> dict:
     """
     動態向外獲取台股/ETF 即時與近 1 個月價量、KD 指標數據：
     - 自動依序嘗試上市 (.TW) 與上櫃 (.TWO)
@@ -639,6 +639,60 @@ def fetch_stock_data(symbol_str: str, period: str = "1mo") -> dict:
             "success": False,
             "error": f"外部查無 {sym} 之即時數據"
         }
+
+    # 融合即時報價 (Intraday / Post-market Live Fusion)
+    # 確保讀取當前最新的交易日（若歷史K線停在昨日如09/18，但今日如09/21已有盤中或收盤數據，自動融合成最新一筆，絕不滯留於歷史舊日）
+    try:
+        live_price = None
+        live_volume = None
+        live_ts = None
+
+        if t is not None:
+            fi = getattr(t, "fast_info", None)
+            if fi:
+                lp = getattr(fi, "last_price", None)
+                if lp is not None and not np.isnan(lp) and lp > 0:
+                    live_price = float(lp)
+                lv = getattr(fi, "last_volume", None)
+                if lv is not None and not np.isnan(lv) and lv > 0:
+                    live_volume = float(lv)
+
+        q1_url = f"https://query1.finance.yahoo.com/v8/finance/chart/{requests.utils.quote(target_sym)}?interval=1d&range=5d"
+        resp = requests.get(q1_url, headers=HEADERS, timeout=3.5)
+        if resp.status_code == 200:
+            meta = resp.json().get("chart", {}).get("result", [{}])[0].get("meta", {})
+            reg_price = meta.get("regularMarketPrice")
+            reg_time = meta.get("regularMarketTime")
+            reg_vol = meta.get("regularMarketVolume")
+            if reg_price is not None and reg_price > 0:
+                live_price = float(reg_price)
+            if reg_vol is not None and reg_vol > 0:
+                live_volume = float(reg_vol)
+            if reg_time:
+                live_ts = int(reg_time)
+
+        if live_price is not None and live_ts:
+            tz_tw = timezone(timedelta(hours=8))
+            live_date_str = datetime.fromtimestamp(live_ts, tz=tz_tw).strftime("%Y-%m-%d")
+            last_hist_date_str = df.index[-1].strftime("%Y-%m-%d") if hasattr(df.index[-1], "strftime") else str(df.index[-1])[:10]
+
+            if live_date_str > last_hist_date_str:
+                prev_c = float(df["Close"].iloc[-1])
+                new_idx = pd.Timestamp(live_date_str, tz=df.index.tz if hasattr(df.index, "tz") and df.index.tz else None)
+                new_row = pd.DataFrame([{
+                    "Open": live_price,
+                    "High": max(live_price, prev_c),
+                    "Low": min(live_price, prev_c),
+                    "Close": live_price,
+                    "Volume": live_volume or 0
+                }], index=[new_idx])
+                df = pd.concat([df, new_row])
+            elif live_date_str == last_hist_date_str:
+                df.iloc[-1, df.columns.get_loc("Close")] = live_price
+                if live_volume and df["Volume"].iloc[-1] <= 0:
+                    df.iloc[-1, df.columns.get_loc("Volume")] = live_volume
+    except Exception:
+        pass
 
     # 取即時現價、前日收盤、計算漲跌幅
     df_clean = df.dropna(subset=["Close"]).copy()
@@ -726,7 +780,7 @@ def fetch_stock_data(symbol_str: str, period: str = "1mo") -> dict:
         "info": info
     }
 
-def fetch_market_index_data(symbol: str = "^TWII") -> dict:
+def fetch_market_index_data(symbol: str = "^TWII", refresh_time: float = None) -> dict:
     """
     抓取加權指數 (^TWII) 近 15 日數據，產出最近 10 個交易日的明細：
     [日期] | [加權指數] | [漲跌點數] | [漲跌幅 (%)] | [大盤 9K] | [大盤 9D] | [成交金額 (億)] | [連漲/連跌天數]
@@ -800,6 +854,36 @@ def fetch_market_index_data(symbol: str = "^TWII") -> dict:
             "success": False,
             "error": "無法從外部真實端點獲取加權指數數據，請檢查網路連線。"
         }
+
+    # 即時行情融合 (Intraday / Post-market Live Fusion)
+    # 確保大盤讀取當前最新的交易日（若是盤中或剛盤後，取得即時價作為最新一筆數據，絕不滯留於昨日）
+    try:
+        q1_url = f"https://query1.finance.yahoo.com/v8/finance/chart/{requests.utils.quote(symbol)}?interval=1d&range=5d"
+        resp = requests.get(q1_url, headers=HEADERS, timeout=3.5)
+        if resp.status_code == 200:
+            meta = resp.json().get("chart", {}).get("result", [{}])[0].get("meta", {})
+            reg_price = meta.get("regularMarketPrice")
+            reg_time = meta.get("regularMarketTime")
+            if reg_price is not None and reg_price > 0 and reg_time:
+                tz_tw = timezone(timedelta(hours=8))
+                live_date_str = datetime.fromtimestamp(int(reg_time), tz=tz_tw).strftime("%Y-%m-%d")
+                last_hist_date_str = df.index[-1].strftime("%Y-%m-%d") if hasattr(df.index[-1], "strftime") else str(df.index[-1])[:10]
+
+                if live_date_str > last_hist_date_str:
+                    prev_c = float(df["Close"].iloc[-1])
+                    new_idx = pd.Timestamp(live_date_str, tz=df.index.tz if hasattr(df.index, "tz") and df.index.tz else None)
+                    new_row = pd.DataFrame([{
+                        "Open": reg_price,
+                        "High": max(reg_price, prev_c),
+                        "Low": min(reg_price, prev_c),
+                        "Close": reg_price,
+                        "Volume": 0
+                    }], index=[new_idx])
+                    df = pd.concat([df, new_row])
+                elif live_date_str == last_hist_date_str:
+                    df.iloc[-1, df.columns.get_loc("Close")] = reg_price
+    except Exception:
+        pass
 
     df = df.dropna(subset=["Close"]).copy()
 

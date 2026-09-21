@@ -12,6 +12,8 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import os
 import re
+import time
+from datetime import datetime
 
 from src.stock_data import fetch_stock_data, format_symbol, fetch_market_index_data, get_stock_name
 from src.etf_nav import get_valuation_or_nav
@@ -202,16 +204,29 @@ def plot_market_index_chart(df: pd.DataFrame) -> go.Figure:
     fig.update_yaxes(title_text="KD 值", range=[0, 100], row=2, col=1)
     return fig
 
+# Initialize session_state
+if "last_refresh_time" not in st.session_state:
+    st.session_state["last_refresh_time"] = time.time()
+if "last_stock_input" not in st.session_state:
+    st.session_state["last_stock_input"] = DEFAULT_STOCKS
+if "refresh_counter" not in st.session_state:
+    st.session_state["refresh_counter"] = 0
+
 # Sidebar Layout
 st.sidebar.title("📊 儀表板控制台")
 
-# Stock Input Box
-stock_input = st.sidebar.text_area(
-    "股票與 ETF 清單 (以逗號分隔)",
-    value=DEFAULT_STOCKS,
-    height=100,
-    help="請輸入 10 支台股代號（例如：2330.TW, 0050.TW）"
-)
+# Stock Input Box inside Form (pressing Enter inside text input natively triggers form submit)
+with st.sidebar.form(key="stock_search_form", clear_on_submit=False):
+    stock_input = st.text_area(
+        "股票與 ETF 清單 (以逗號分隔)",
+        value=st.session_state.get("last_stock_input", DEFAULT_STOCKS),
+        height=90,
+        help="請輸入台股代號（例如：2330.TW, 0050.TW），在文字框按 Enter 或點擊下方按鈕"
+    )
+    submit_btn = st.form_submit_button("🔍 查詢 / 同步最新即時行情 (Enter)", use_container_width=True)
+
+# Dedicated Force Refresh Button
+force_refresh_btn = st.sidebar.button("🔄 同步最新即時行情 (強制向外重抓)", use_container_width=True)
 
 # Gemini API Key Input
 api_key = st.sidebar.text_input(
@@ -228,17 +243,23 @@ uploaded_file = st.sidebar.file_uploader(
     help="上傳後，AI 買賣評估將結合附件內容進行綜合分析。"
 )
 
-refresh_btn = st.sidebar.button("🔄 同步最新即時行情 (強制刷新)", use_container_width=True)
-if refresh_btn:
-    st.cache_data.clear()
-    st.rerun()
+# Detect if Enter / Submit / Force Refresh / Value Change occurred
+force_refresh = False
+if submit_btn or force_refresh_btn:
+    force_refresh = True
 
-# Automatically clear cache when stock list changes to fetch immediate real-time quotes
-if "last_stock_input" not in st.session_state:
+if stock_input != st.session_state.get("last_stock_input"):
+    force_refresh = True
     st.session_state["last_stock_input"] = stock_input
-elif st.session_state["last_stock_input"] != stock_input:
+
+if force_refresh:
     st.cache_data.clear()
-    st.session_state["last_stock_input"] = stock_input
+    st.session_state["last_refresh_time"] = time.time()
+    st.session_state["refresh_counter"] = st.session_state.get("refresh_counter", 0) + 1
+
+# Current Cache Buster Token
+current_rf_token = st.session_state["last_refresh_time"]
+sync_time_str = datetime.fromtimestamp(current_rf_token).strftime("%H:%M:%S")
 
 # Parse uploaded file
 attachment_text = ""
@@ -248,7 +269,7 @@ if uploaded_file is not None:
 
 # Main Header
 st.title("📈 台股Dashboard")
-st.caption("即時價量數據 | 9日 KD 技術指標 | ETF 折溢價比 / 個股本益比 | 24-48H 新聞 | AI 買賣評估")
+st.caption(f"即時價量數據 | 9日 KD 技術指標 | ETF 折溢價比 / 個股本益比 | 24-48H 新聞 | AI 買賣評估 (最後同步：{sync_time_str})")
 
 # Parse Stock List with robust splitting for half/fullwidth comma and spaces
 raw_symbols = [s.strip().upper() for s in re.split(r'[,，\s]+', stock_input) if s.strip()]
@@ -256,14 +277,14 @@ if not raw_symbols:
     st.warning("請在側邊欄輸入至少 1 支股票代號。")
     st.stop()
 
-# Cache data loading using st.cache_data (TTL=300s, cleared automatically on refresh or input change)
+# Cache data loading using st.cache_data (TTL=300s, with refresh_time cache buster)
 @st.cache_data(ttl=300, show_spinner=False)
-def load_all_stock_data(symbols_list):
+def load_all_stock_data(symbols_list, refresh_time=None):
     results = []
     for sym in symbols_list:
         clean_sym = sym.strip().upper()
         try:
-            data = fetch_stock_data(clean_sym)
+            data = fetch_stock_data(clean_sym, refresh_time=refresh_time)
             if data.get("success"):
                 try:
                     val_info = get_valuation_or_nav(data["symbol"], data["latest_close"], data.get("info"))
@@ -288,15 +309,15 @@ def load_all_stock_data(symbols_list):
     return results
 
 @st.cache_data(ttl=300, show_spinner=False)
-def load_market_data():
-    return fetch_market_index_data("^TWII")
+def load_market_data(refresh_time=None):
+    return fetch_market_index_data("^TWII", refresh_time=refresh_time)
 
 
 # Market Index (^TWII) 10-Day Technical & Capital Overview
-market_data = load_market_data()
+market_data = load_market_data(refresh_time=current_rf_token)
 
 with st.spinner("正在抓取最新價量數據、KD 指標與財經新聞..."):
-    stock_dataset = load_all_stock_data(raw_symbols)
+    stock_dataset = load_all_stock_data(raw_symbols, refresh_time=current_rf_token)
 
 # Perform AI Evaluation for each stock
 analyzed_data = []
