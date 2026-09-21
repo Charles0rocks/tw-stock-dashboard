@@ -94,6 +94,18 @@ async function fetchMarketData() {
       lows = q.low;
       closes = q.close;
       volumes = q.volume;
+
+      // If Query1 has 0 or missing for today's volume, fetch ApacLibraCharts to get real-time turnover
+      if (volumes && volumes.length > 0 && (!volumes[volumes.length - 1] || volumes[volumes.length - 1] <= 0)) {
+        try {
+          const apacUrl = 'https://tw.stock.yahoo.com/_td-stock/api/resource/FinanceChartService.ApacLibraCharts;period=d;symbols=%5B%22%5ETWII%22%5D';
+          const apacRes = await fetchJson(apacUrl, { 'Referer': 'https://tw.stock.yahoo.com/' }, 3000);
+          const apacVol = apacRes?.[0]?.chart?.indicators?.quote?.[0]?.volume;
+          if (apacVol && apacVol.length > 0 && apacVol[apacVol.length - 1] > 0) {
+            volumes[volumes.length - 1] = apacVol[apacVol.length - 1] * 10;
+          }
+        } catch (e) {}
+      }
     }
   } catch (err) {
     // console.warn('Query1 failed, trying APAC endpoint:', err.message);
