@@ -13,7 +13,7 @@ from plotly.subplots import make_subplots
 import os
 import re
 
-from src.stock_data import fetch_stock_data, format_symbol, fetch_market_index_data
+from src.stock_data import fetch_stock_data, format_symbol, fetch_market_index_data, get_stock_name
 from src.etf_nav import get_valuation_or_nav
 from src.news_fetcher import fetch_stock_news
 from src.file_parser import parse_uploaded_file
@@ -228,10 +228,17 @@ uploaded_file = st.sidebar.file_uploader(
     help="上傳後，AI 買賣評估將結合附件內容進行綜合分析。"
 )
 
-refresh_btn = st.sidebar.button("🔄 重新載入並分析 (清除快取)", use_container_width=True)
+refresh_btn = st.sidebar.button("🔄 同步最新即時行情 (強制刷新)", use_container_width=True)
 if refresh_btn:
     st.cache_data.clear()
     st.rerun()
+
+# Automatically clear cache when stock list changes to fetch immediate real-time quotes
+if "last_stock_input" not in st.session_state:
+    st.session_state["last_stock_input"] = stock_input
+elif st.session_state["last_stock_input"] != stock_input:
+    st.cache_data.clear()
+    st.session_state["last_stock_input"] = stock_input
 
 # Parse uploaded file
 attachment_text = ""
@@ -249,8 +256,8 @@ if not raw_symbols:
     st.warning("請在側邊欄輸入至少 1 支股票代號。")
     st.stop()
 
-# Cache data loading using st.cache_data for speed (ttl=10 for fresh KD data)
-@st.cache_data(ttl=10, show_spinner=False)
+# Cache data loading using st.cache_data (TTL=300s, cleared automatically on refresh or input change)
+@st.cache_data(ttl=300, show_spinner=False)
 def load_all_stock_data(symbols_list):
     results = []
     for sym in symbols_list:
@@ -280,7 +287,7 @@ def load_all_stock_data(symbols_list):
             })
     return results
 
-@st.cache_data(ttl=60, show_spinner=False)
+@st.cache_data(ttl=300, show_spinner=False)
 def load_market_data():
     return fetch_market_index_data("^TWII")
 

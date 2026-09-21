@@ -144,12 +144,6 @@ def fetch_yahoo_official_kd(symbol: str) -> dict:
     except Exception:
         pass
 
-    # 2. 備援：若網路異常，讀取基準快照
-    if code in YAHOO_OFFICIAL_TABLE:
-        return YAHOO_OFFICIAL_TABLE[code]
-    if base_code in YAHOO_OFFICIAL_TABLE:
-        return YAHOO_OFFICIAL_TABLE[base_code]
-
     # 3. 備援：若本地有 Puppeteer 腳本則嘗試提取
     try:
         import subprocess
@@ -660,6 +654,20 @@ def fetch_stock_data(symbol_str: str, period: str = "1mo") -> dict:
     final_d = float(latest_row.get("9D", 50.0))
     prev_k = float(df_clean.iloc[-2].get("9K", 50.0)) if len(df_clean) > 1 else 50.0
     prev_d = float(df_clean.iloc[-2].get("9D", 50.0)) if len(df_clean) > 1 else 50.0
+    # 嘗試直連 Yahoo 官方技術分析數值 (即時對齊官方 9,3,3 KD)
+    try:
+        official_data = fetch_yahoo_official_kd(target_sym)
+        if not official_data:
+            official_data = fetch_yahoo_official_kd(sym)
+        if official_data and official_data.get("k") is not None and official_data.get("d") is not None:
+            final_k = float(official_data["k"])
+            final_d = float(official_data["d"])
+            df_clean.iloc[-1, df_clean.columns.get_loc("9K")] = final_k
+            df_clean.iloc[-1, df_clean.columns.get_loc("9D")] = final_d
+            df_clean.iloc[-1, df_clean.columns.get_loc("K")] = final_k
+            df_clean.iloc[-1, df_clean.columns.get_loc("D")] = final_d
+    except Exception:
+        pass
 
     signal_info = get_kd_signal(final_k, final_d, prev_k, prev_d)
     signal_info["kd_source"] = "Yahoo官方源"
@@ -832,6 +840,20 @@ def fetch_market_index_data(symbol: str = "^TWII") -> dict:
         else:
             cur_streak = cur_streak - 1 if cur_streak < 0 else -1
             streaks.append(f"連跌 {abs(cur_streak)} 天")
+
+    # 若 yfinance 當日收盤後成交金額尚未入帳 (Volume <= 0)，自 Yahoo 官方 ApacLibraCharts 提取百萬元成交值
+    if not df.empty and (pd.isna(df["Volume"].iloc[-1]) or df["Volume"].iloc[-1] <= 0):
+        try:
+            apac_url = "https://tw.stock.yahoo.com/_td-stock/api/resource/FinanceChartService.ApacLibraCharts;period=d;symbols=%5B%22%5ETWII%22%5D"
+            apac_resp = requests.get(apac_url, headers=HEADERS, timeout=4)
+            if apac_resp.status_code == 200:
+                apac_data = apac_resp.json()
+                if apac_data and apac_data[0].get("chart"):
+                    apac_vols = apac_data[0]["chart"].get("indicators", {}).get("quote", [{}])[0].get("volume", [])
+                    if apac_vols and apac_vols[-1] and apac_vols[-1] > 0:
+                        df.iloc[-1, df.columns.get_loc("Volume")] = float(apac_vols[-1]) * 10.0
+        except Exception:
+            pass
 
     df["Streak"] = streaks
     df["Turnover_Yi"] = (df["Volume"] / 1000.0).round(1)
