@@ -515,17 +515,19 @@ export default async function handler(req, res) {
     return;
   }
 
-  const symbol = req.query.symbol || req.query.code;
+  const query = req.query || {};
+  const symbol = query.symbol || query.code;
   if (!symbol) {
     res.status(400).json({ error: 'Missing symbol query parameter' });
     return;
   }
 
   const cleanCode = symbol.trim().toUpperCase();
+  const forceRefresh = query.refresh === '1' || query.force === 'true' || Boolean(query.t);
   const cached = CACHE.get(cleanCode);
   const now = Date.now();
-  if (cached && (now - cached.timestamp) < CACHE_TTL_MS) {
-    res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=120');
+  if (!forceRefresh && cached && (now - cached.timestamp) < CACHE_TTL_MS) {
+    res.setHeader('Cache-Control', 'no-cache, no-store, max-age=0, must-revalidate');
     res.setHeader('X-Cache', 'HIT');
     res.status(200).json(cached.data);
     return;
@@ -537,7 +539,7 @@ export default async function handler(req, res) {
     if (data.symbol) {
       CACHE.set(data.symbol, { data, timestamp: now });
     }
-    res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=120');
+    res.setHeader('Cache-Control', 'no-cache, no-store, max-age=0, must-revalidate');
     res.setHeader('X-Cache', 'MISS');
     res.status(200).json(data);
   } catch (err) {

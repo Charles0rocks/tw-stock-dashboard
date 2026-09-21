@@ -230,9 +230,11 @@ export default async function handler(req, res) {
     return;
   }
 
+  const query = req.query || {};
+  const forceRefresh = query.refresh === '1' || query.force === 'true' || Boolean(query.t);
   const now = Date.now();
-  if (CACHE.data && (now - CACHE.timestamp) < CACHE_TTL_MS) {
-    res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=120');
+  if (!forceRefresh && CACHE.data && (now - CACHE.timestamp) < CACHE_TTL_MS) {
+    res.setHeader('Cache-Control', 'no-cache, no-store, max-age=0, must-revalidate');
     res.setHeader('X-Cache', 'HIT');
     res.status(200).json(CACHE.data);
     return;
@@ -242,7 +244,7 @@ export default async function handler(req, res) {
     const data = await fetchMarketData();
     CACHE.data = data;
     CACHE.timestamp = now;
-    res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=120');
+    res.setHeader('Cache-Control', 'no-cache, no-store, max-age=0, must-revalidate');
     res.setHeader('X-Cache', 'MISS');
     res.status(200).json(data);
   } catch (err) {
