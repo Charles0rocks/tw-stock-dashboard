@@ -54,7 +54,7 @@ const STOCK_NAME_MAP = {
 
 let SCREENER_CACHE = null;
 let CACHE_TIME = 0;
-const CACHE_TTL = 30 * 1000; // 30 seconds cache
+const CACHE_TTL = 120 * 1000; // 120 seconds cache
 
 function fetchJson(url, headers = {}, timeoutMs = 4500) {
   return new Promise((resolve, reject) => {
@@ -122,7 +122,7 @@ export default async function handler(req, res) {
 
   // Return cached result if valid and not explicitly forced
   if (SCREENER_CACHE && (now - CACHE_TIME < CACHE_TTL) && !isExpanded) {
-    res.setHeader('Cache-Control', 's-maxage=30, stale-while-revalidate=60');
+    res.setHeader('Cache-Control', 's-maxage=120, stale-while-revalidate=120');
     return res.status(200).json(SCREENER_CACHE);
   }
 
@@ -227,7 +227,7 @@ export default async function handler(req, res) {
       CACHE_TIME = Date.now();
     }
 
-    res.setHeader('Cache-Control', 's-maxage=30, stale-while-revalidate=60');
+    res.setHeader('Cache-Control', 's-maxage=120, stale-while-revalidate=120');
     return res.status(200).json(payload);
 
   } catch (err) {

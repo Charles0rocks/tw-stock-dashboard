@@ -76,5 +76,24 @@ class TestKDScreener(unittest.TestCase):
             self.assertGreater(s["k"], 80.0, f"{s['symbol']} K 應大於 80: {s['k']}")
             self.assertIn("🔴", s["tag"])
 
+    def test_screener_cache_120s(self):
+        """測試 120 秒快取機制，第二次呼叫應秒回 (耗時趨近 0)"""
+        import time
+        from src.stock_data import fetch_kd_extremes_screener
+
+        t0 = time.time()
+        res1 = fetch_kd_extremes_screener(limit=100, force_refresh=True)
+        t_first = time.time() - t0
+
+        t1 = time.time()
+        res2 = fetch_kd_extremes_screener(limit=100, force_refresh=False)
+        t_second = time.time() - t1
+
+        self.assertLess(t_second, 0.05, f"快取命中應在 0.05 秒內返回，實際耗時: {t_second}s")
+        self.assertEqual(res1["total_scanned"], res2["total_scanned"])
+        self.assertEqual(len(res1["oversold"]), len(res2["oversold"]))
+        self.assertEqual(len(res1["overbought"]), len(res2["overbought"]))
+
 if __name__ == "__main__":
     unittest.main()
+

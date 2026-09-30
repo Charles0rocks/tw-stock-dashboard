@@ -620,14 +620,13 @@ def screen_kd_extremes(
       * 標註：🔴【高檔死叉 / 超買警戒】
     """
     import time
-    from src.stock_data import fetch_popular_universe, fetch_batch_quotes_kd
+    from src.stock_data import fetch_popular_universe, fetch_batch_quotes_kd, fetch_kd_extremes_screener
+
+    if not custom_symbols:
+        return fetch_kd_extremes_screener(limit=limit, expanded=expanded)
 
     t0 = time.time()
-    if custom_symbols:
-        universe = custom_symbols
-    else:
-        universe = fetch_popular_universe(limit=limit, expanded=expanded)
-
+    universe = custom_symbols
     quotes = fetch_batch_quotes_kd(universe)
 
     oversold_list = []

@@ -15,7 +15,7 @@ import re
 import time
 from datetime import datetime
 
-from src.stock_data import fetch_stock_data, format_symbol, fetch_market_index_data, get_stock_name
+from src.stock_data import fetch_stock_data, format_symbol, fetch_market_index_data, get_stock_name, fetch_kd_extremes_screener
 from src.etf_nav import get_valuation_or_nav
 from src.news_fetcher import fetch_stock_news
 from src.file_parser import parse_uploaded_file
@@ -216,59 +216,13 @@ if "refresh_counter" not in st.session_state:
 # Sidebar Layout
 st.sidebar.title("📊 儀表板控制台")
 
-# --- Yahoo 官方全市場 KD 極端值快速選股 ---
-st.sidebar.markdown("### 🎯 全市場 KD 極端值快速選股")
-st.sidebar.caption("Yahoo 官方端點即時篩選，響應時間 < 3 秒")
-
-expand_scan = st.sidebar.checkbox(
-    "🔍 擴大掃描 (300檔)",
-    value=False,
-    help="預設掃描前 150 檔權值與熱門股，勾選後擴大掃描至上市櫃前 300 檔"
-)
-
-btn_oversold = st.sidebar.button(
-    "🔘 一鍵篩選：K>D & K<20 (超賣轉強)",
-    key="btn_oversold_kd",
-    use_container_width=True,
-    help="買方轉折區（超賣金叉 / 築底）：K > D 且 K < 20"
-)
-
-btn_overbought = st.sidebar.button(
-    "🔘 一鍵篩選：K<D & K>80 (超買警戒)",
-    key="btn_overbought_kd",
-    use_container_width=True,
-    help="賣方警戒區（超買死叉 / 鈍化）：K < D 且 K > 80"
-)
-
-screener_triggered = False
-if btn_oversold or btn_overbought:
-    with st.spinner("⚡ 正在極速掃描全市場 KD 極端值標的..."):
-        scan_limit = 300 if expand_scan else 150
-        s_res = screen_kd_extremes(limit=scan_limit, expanded=expand_scan)
-        st.session_state["last_screener_result"] = s_res
-        
-        target_syms = s_res["oversold_symbols"] if btn_oversold else s_res["overbought_symbols"]
-        filter_label = "超賣轉強 (K>D & K<20)" if btn_oversold else "超買警戒 (K<D & K>80)"
-        
-        if target_syms:
-            st.session_state["last_stock_input"] = ", ".join(target_syms)
-            st.session_state["screener_msg"] = f"已為您篩選出 {len(target_syms)} 檔符合【{filter_label}】標的並帶入分析！"
-            st.cache_data.clear()
-            st.session_state["last_refresh_time"] = time.time()
-            st.session_state["refresh_counter"] = st.session_state.get("refresh_counter", 0) + 1
-            st.rerun()
-        else:
-            st.sidebar.warning(f"目前全市場活躍標的無符合【{filter_label}】此極端條件者。")
-
-st.sidebar.markdown("---")
-
 # Stock Input Box inside Form (pressing Enter inside text input natively triggers form submit)
 with st.sidebar.form(key="stock_search_form", clear_on_submit=False):
     stock_input = st.text_area(
-        "股票與 ETF 清單 (以逗號分隔)",
+        "【輸入查詢股號】",
         value=st.session_state.get("last_stock_input", DEFAULT_STOCKS),
         height=90,
-        help="請輸入台股代號（例如：2330.TW, 0050.TW），在文字框按 Enter 或點擊下方按鈕"
+        help="請輸入台股代號（例如：2330.TW, 0050.TW），多檔以逗號分隔。在文字框按 Enter 或點擊下方按鈕即可查詢"
     )
     submit_btn = st.form_submit_button("🔍 查詢 / 同步最新即時行情 (Enter)", use_container_width=True)
 
@@ -322,20 +276,6 @@ st.caption(f"即時價量數據 | 9日 KD 技術指標 | ETF 折溢價比 / 個�
 if "screener_msg" in st.session_state:
     st.toast(st.session_state["screener_msg"], icon="🎯")
     del st.session_state["screener_msg"]
-
-# Screener Scoreboard Display (if screener was run)
-if "last_screener_result" in st.session_state:
-    s_res = st.session_state["last_screener_result"]
-    ovs = s_res.get("oversold", [])
-    ovb = s_res.get("overbought", [])
-    scanned = s_res.get("total_scanned", 0)
-    elapsed = s_res.get("elapsed_seconds", 0)
-    st.info(
-        f"🎯 **【Yahoo 官方全市場 KD 極端值快速選股計分板】**　"
-        f"🟢 **符合超賣金叉 (K>D 且 K<20)：共 {len(ovs)} 檔** ｜ "
-        f"🔴 **符合超買死叉 (K<D 且 K>80)：共 {len(ovb)} 檔**　"
-        f"*(⚡ 掃描 {scanned} 檔活躍標的，耗時 {elapsed} 秒)*"
-    )
 
 # Parse Stock List with robust splitting for half/fullwidth comma and spaces
 raw_symbols = [s.strip().upper() for s in re.split(r'[,，\s]+', stock_input) if s.strip()]
@@ -457,6 +397,122 @@ if market_data.get("success"):
             fig_market = plot_market_index_chart(market_data["df_raw"])
             st.plotly_chart(fig_market, use_container_width=True)
     st.divider()
+
+# =====================================================================================
+# 二、獨立【🎯 Yahoo 官方全市場 KD 極端值快速選股看板】
+# =====================================================================================
+with st.expander("🎯 Yahoo 官方全市場 KD 極端值快速選股看板", expanded=True):
+    col_hdr1, col_hdr2, col_hdr3 = st.columns([0.50, 0.30, 0.20])
+    with col_hdr1:
+        st.markdown("**即時選股母池**：台股上市櫃成交量前 100~150 檔權值與熱門活躍標的 (台灣50+中型100+熱門ETF)")
+    with col_hdr2:
+        expand_screener = st.checkbox("🔍 擴大掃描至前 300 檔", value=False, key="chk_expand_screener_main")
+    with col_hdr3:
+        btn_refresh_screener = st.button("🔄 立即重新掃描", key="btn_refresh_screener_main", use_container_width=True)
+
+    scan_limit = 300 if expand_screener else 150
+    screener_res = fetch_kd_extremes_screener(
+        limit=scan_limit,
+        expanded=expand_screener,
+        force_refresh=btn_refresh_screener
+    )
+
+    oversold_items = screener_res.get("oversold", [])
+    overbought_items = screener_res.get("overbought", [])
+    total_scanned = screener_res.get("total_scanned", 0)
+    elapsed_sec = screener_res.get("elapsed_seconds", 0)
+
+    st.caption(f"⚡ 掃描完成：共掃描 **{total_scanned}** 檔活躍標的，耗時 **{elapsed_sec}** 秒（快取有效期限 120 秒）")
+
+    # 兩大子分頁
+    tab_ovs, tab_ovb = st.tabs([
+        f"🟢【超賣金叉區 (K > D 且 K < 20)】({len(oversold_items)} 檔)",
+        f"🔴【超買死叉區 (K < D 且 K > 80)】({len(overbought_items)} 檔)"
+    ])
+
+    def render_screener_table(items, tab_type="oversold"):
+        if not items:
+            if tab_type == "oversold":
+                st.info("目前全市場活躍標的無符合【超賣金叉：K > D 且 K < 20】之標的。")
+            else:
+                st.info("目前全市場活躍標的無符合【超買死叉：K < D 且 K > 80】之標的。")
+            return
+
+        all_syms = [it["symbol"] for it in items]
+        col_t1, col_t2 = st.columns([0.75, 0.25])
+        with col_t1:
+            if tab_type == "oversold":
+                st.markdown("💡 **策略特性**：跌深築底、轉折向上，具備跌深反彈與左側安全邊際。")
+            else:
+                st.markdown("💡 **策略特性**：高檔過熱、動能竭盡，短線拉回風險偏高。")
+        with col_t2:
+            if st.button(f"➕ 一鍵全加入查詢 ({len(items)} 檔)", key=f"add_all_{tab_type}", use_container_width=True):
+                cur_input = st.session_state.get("last_stock_input", DEFAULT_STOCKS)
+                cur_tokens = [s.strip().upper() for s in re.split(r'[,，\s]+', cur_input) if s.strip()]
+                new_tokens = list(cur_tokens)
+                for s in all_syms:
+                    if s not in new_tokens and s.replace(".TW", "").replace(".TWO", "") not in new_tokens:
+                        new_tokens.append(s)
+                st.session_state["last_stock_input"] = ", ".join(new_tokens)
+                st.cache_data.clear()
+                st.session_state["last_refresh_time"] = time.time()
+                st.session_state["screener_msg"] = f"已將 {len(all_syms)} 檔標的加入查詢清單！"
+                st.rerun()
+
+        # 表格欄位: [股票代號] | [股票名稱] | [現價] | [今日漲跌幅] | [9K] | [9D] | [狀態標記] | [快速加入查詢]
+        h1, h2, h3, h4, h5, h6, h7, h8 = st.columns([1.1, 1.2, 0.9, 1.1, 0.8, 0.8, 2.2, 1.2])
+        h1.markdown("**股票代號**")
+        h2.markdown("**股票名稱**")
+        h3.markdown("**現價**")
+        h4.markdown("**今日漲跌幅**")
+        h5.markdown("**9K**")
+        h6.markdown("**9D**")
+        h7.markdown("**狀態標記**")
+        h8.markdown("**快速加入查詢**")
+
+        st.markdown("<hr style='margin: 4px 0 8px 0; border-color: #31333f;'>", unsafe_allow_html=True)
+
+        for idx, it in enumerate(items):
+            r1, r2, r3, r4, r5, r6, r7, r8 = st.columns([1.1, 1.2, 0.9, 1.1, 0.8, 0.8, 2.2, 1.2])
+            sym = it["symbol"]
+            nm = it["name"]
+            px = f"${it['latest_close']:.2f}"
+            chg = it["change_pct"]
+            sign = "+" if chg > 0 else ""
+            chg_str = f"{sign}{chg:.2f}%"
+            k_val = f"{it['k']:.1f}"
+            d_val = f"{it['d']:.1f}"
+            tag = it["tag"]
+
+            r1.write(f"**{sym}**")
+            r2.write(f"**{nm}**")
+            r3.write(px)
+            r4.write(f"{chg_str}")
+            r5.write(f"**{k_val}**")
+            r6.write(f"**{d_val}**")
+            r7.write(f"{tag}")
+
+            cur_tokens = [s.strip().upper() for s in re.split(r'[,，\s]+', st.session_state.get("last_stock_input", DEFAULT_STOCKS)) if s.strip()]
+            is_already_added = (sym in cur_tokens or sym.replace(".TW", "").replace(".TWO", "") in cur_tokens)
+
+            if is_already_added:
+                r8.markdown("<span style='color: #a0aec0; font-size: 11px;'>✅ 已在清單</span>", unsafe_allow_html=True)
+            else:
+                if r8.button("➕ 加入查詢", key=f"btn_add_{tab_type}_{sym}_{idx}", use_container_width=True):
+                    new_tokens = list(cur_tokens) + [sym]
+                    st.session_state["last_stock_input"] = ", ".join(new_tokens)
+                    st.cache_data.clear()
+                    st.session_state["last_refresh_time"] = time.time()
+                    st.session_state["screener_msg"] = f"已將 {sym} {nm} 加入查詢清單！"
+                    st.rerun()
+
+    with tab_ovs:
+        render_screener_table(oversold_items, "oversold")
+
+    with tab_ovb:
+        render_screener_table(overbought_items, "overbought")
+
+st.divider()
 
 
 # Section 1: Overview Table

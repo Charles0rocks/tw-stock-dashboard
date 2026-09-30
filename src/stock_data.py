@@ -1087,3 +1087,72 @@ def fetch_batch_quotes_kd(symbols_list: list, timeout: float = 6.0) -> list:
 
     return all_results
 
+_KD_SCREENER_CACHE = {}
+
+def fetch_kd_extremes_screener(limit: int = 150, expanded: bool = False, force_refresh: bool = False) -> dict:
+    """
+    全市場 KD 極端值快速選股模組：
+    1. 選股母池設定為「台股上市櫃成交量前 100~150 檔權值與熱門活躍標的」（或台灣 50 + 中型 100）
+    2. 批次向 Yahoo 官方端點取得該池標的之最新 9K 與 9D
+    3. 嚴格依條件過濾：
+       - 超賣金叉區 (K > D 且 K < 20)：跌深築底、轉折向上
+       - 超買死叉區 (K < D 且 K > 80)：高檔過熱、動能竭盡
+    4. 快取設定 TTL = 120 秒，避免重複渲染頻寬消耗
+    """
+    import time
+    now = time.time()
+    cache_key = f"{limit}_{expanded}"
+    if not force_refresh and cache_key in _KD_SCREENER_CACHE:
+        cached_entry = _KD_SCREENER_CACHE[cache_key]
+        if now - cached_entry["cached_at"] < 120.0:
+            return cached_entry["data"]
+
+    t0 = time.time()
+    universe = fetch_popular_universe(limit=limit, expanded=expanded)
+    quotes = fetch_batch_quotes_kd(universe)
+
+    oversold_list = []
+    overbought_list = []
+
+    for q in quotes:
+        k = q.get("k", 50.0)
+        d = q.get("d", 50.0)
+
+        # 條件 1: 買方轉折區 (超賣金叉 / 築底)：K > D 且 K < 20
+        if k > d and k < 20.0:
+            item = dict(q)
+            item["tag"] = "🟢【超賣區金叉 / 築底反轉】"
+            item["condition"] = "K > D 且 K < 20"
+            item["meaning"] = "跌深築底、轉折向上，具備跌深反彈與左側安全邊際。"
+            oversold_list.append(item)
+
+        # 條件 2: 賣方警戒區 (超買死叉 / 鈍化)：K < D 且 K > 80
+        elif k < d and k > 80.0:
+            item = dict(q)
+            item["tag"] = "🔴【高檔死叉 / 超買警戒】"
+            item["condition"] = "K < D 且 K > 80"
+            item["meaning"] = "高檔過熱、動能竭盡，短線拉回風險偏高。"
+            overbought_list.append(item)
+
+    oversold_list.sort(key=lambda x: x["k"])
+    overbought_list.sort(key=lambda x: -x["k"])
+
+    elapsed = round(time.time() - t0, 2)
+    res = {
+        "timestamp": now,
+        "total_scanned": len(quotes),
+        "oversold": oversold_list,
+        "overbought": overbought_list,
+        "oversold_symbols": [s["symbol"] for s in oversold_list],
+        "overbought_symbols": [s["symbol"] for s in overbought_list],
+        "elapsed_seconds": elapsed
+    }
+
+    _KD_SCREENER_CACHE[cache_key] = {
+        "cached_at": now,
+        "data": res
+    }
+
+    return res
+
+

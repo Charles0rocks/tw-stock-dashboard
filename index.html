@@ -73,7 +73,7 @@
     <!-- Stock Input Box with Enter Button -->
     <div class="space-y-2">
       <label class="text-xs font-semibold text-slate-300 flex items-center justify-between">
-        <span>股票與 ETF 股號</span>
+        <span>【輸入查詢股號】</span>
         <span class="text-[10px] text-slate-400 font-normal">Enter 鍵或按鈕送出</span>
       </label>
       
@@ -111,41 +111,6 @@
           <button type="button" onclick="setQuickStockList('2881, 2882')" class="px-2 py-0.5 rounded text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition-colors">金控股</button>
         </div>
       </div>
-
-      <!-- Yahoo 官方全市場 KD 極端值快速選股 -->
-      <div class="pt-3 border-t border-[#31333f]/60 space-y-2">
-        <div class="flex items-center justify-between">
-          <div class="text-[11px] font-bold text-amber-400 flex items-center gap-1">
-            <span>🎯</span> 全市場 KD 極端值選股
-          </div>
-          <label class="flex items-center gap-1 text-[10px] text-slate-400 cursor-pointer select-none" title="預設前 150 檔，勾選後擴大至 300 檔">
-            <input type="checkbox" id="expandScanCheckbox" class="rounded bg-slate-900 border-slate-700 text-cyan-500 focus:ring-0">
-            <span>擴大掃描</span>
-          </label>
-        </div>
-        <div class="space-y-1.5">
-          <button 
-            type="button" 
-            id="btnScreenerOversold"
-            onclick="triggerKdScreener('oversold')" 
-            class="w-full px-2.5 py-1.5 rounded-md text-[11px] font-bold bg-emerald-950/70 hover:bg-emerald-900/80 active:bg-emerald-800 text-emerald-300 border border-emerald-700/60 transition-all text-left flex items-center justify-between cursor-pointer shadow-sm"
-            title="買方轉折區（超賣金叉 / 築底）：K > D 且 K < 20"
-          >
-            <span class="flex items-center gap-1.5">🔘 一鍵篩選：K&gt;D &amp; K&lt;20</span>
-            <span class="px-1.5 py-0.5 rounded text-[9px] bg-emerald-900/80 text-emerald-200 border border-emerald-700/50">超賣轉強</span>
-          </button>
-          <button 
-            type="button" 
-            id="btnScreenerOverbought"
-            onclick="triggerKdScreener('overbought')" 
-            class="w-full px-2.5 py-1.5 rounded-md text-[11px] font-bold bg-rose-950/70 hover:bg-rose-900/80 active:bg-rose-800 text-rose-300 border border-rose-700/60 transition-all text-left flex items-center justify-between cursor-pointer shadow-sm"
-            title="賣方警戒區（超買死叉 / 鈍化）：K < D 且 K > 80"
-          >
-            <span class="flex items-center gap-1.5">🔘 一鍵篩選：K&lt;D &amp; K&gt;80</span>
-            <span class="px-1.5 py-0.5 rounded text-[9px] bg-rose-900/80 text-rose-200 border border-rose-700/50">超買警戒</span>
-          </button>
-        </div>
-      </div>
     </div>
 
     <div class="mt-auto pt-4 text-[10px] text-slate-500">
@@ -165,21 +130,6 @@
       <p class="text-xs text-slate-400">
         即時價量數據 | 9日 KD 技術指標 | ETF 折溢價比 / 個股本益比 | 24-48h 新聞 | AI 買賣評估
       </p>
-    </div>
-
-    <!-- Whole-Market KD Extremes Screener Scoreboard Banner -->
-    <div id="screenerScoreboardBanner" class="hidden p-3 rounded-lg bg-gradient-to-r from-[#141b26] to-[#1c1829] border border-cyan-800/60 shadow flex flex-col md:flex-row md:items-center justify-between gap-2 transition-all">
-      <div class="flex items-center gap-2 text-xs md:text-sm font-bold text-white flex-wrap">
-        <span class="text-base">🎯</span>
-        <span class="text-cyan-400 font-extrabold">【Yahoo 官方全市場 KD 極端值快速選股結果】</span>
-        <span class="text-slate-500 text-xs">｜</span>
-        <span id="scoreboardOversoldText" class="text-emerald-400 font-bold">🟢 符合超賣金叉：共 0 檔</span>
-        <span class="text-slate-500 text-xs">｜</span>
-        <span id="scoreboardOverboughtText" class="text-rose-400 font-bold">🔴 符合超買死叉：共 0 檔</span>
-      </div>
-      <div id="scoreboardPerfText" class="text-[11px] text-slate-400 font-mono">
-        ⚡ 掃描 0 檔 耗時 0 秒
-      </div>
     </div>
 
     <!-- 4 Summary Metric Cards (Exact Streamlit Match) -->
@@ -274,6 +224,138 @@
         </button>
         <div id="lastSyncTimeText" class="text-[10px] text-slate-400 text-center">
           資料基準日：2026-09-30
+        </div>
+      </div>
+    </div>
+
+    <hr class="border-[#31333f]">
+
+    <!-- Yahoo 官方全市場 KD 極端值快速選股看板 -->
+    <div class="border border-[#31333f] rounded-lg bg-[#1a1c24] overflow-hidden shadow">
+      <!-- Header with Toggle -->
+      <div 
+        onclick="toggleScreenerDashboard()" 
+        class="p-4 flex items-center justify-between cursor-pointer hover:bg-[#262730]/60 transition-colors select-none"
+      >
+        <div class="flex items-center gap-2 flex-wrap">
+          <span class="text-xl">🎯</span>
+          <h2 class="text-base font-bold text-white tracking-wide">Yahoo 官方全市場 KD 極端值快速選股看板</h2>
+          <span id="screenerHeaderBadge" class="text-xs font-mono px-2 py-0.5 rounded bg-cyan-950/70 text-cyan-300 border border-cyan-800">即時掃描</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="text-xs text-slate-400 font-mono hidden sm:inline" id="screenerPerfText">⚡ 耗時 &lt; 3 秒 (快取 120 秒)</span>
+          <span id="screenerChevron" class="text-slate-400 text-xs font-mono">▼</span>
+        </div>
+      </div>
+
+      <!-- Screener Body -->
+      <div id="screenerContent" class="border-t border-[#31333f] p-4 bg-[#0e1117]/80 space-y-4">
+        <!-- Controls Bar -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#161922] p-3 rounded-lg border border-[#2a2d39]">
+          <div class="text-xs text-slate-300 leading-relaxed">
+            <span class="font-bold text-cyan-400">即時選股母池：</span>台股上市櫃成交量前 100~150 檔權值與熱門活躍標的 (台灣50+中型100+熱門ETF)
+          </div>
+          <div class="flex items-center gap-3 shrink-0">
+            <label class="flex items-center gap-1.5 text-xs text-slate-300 cursor-pointer select-none">
+              <input type="checkbox" id="expandScanCheckboxMain" class="rounded bg-slate-900 border-slate-700 text-cyan-500 focus:ring-0">
+              <span>🔍 擴大至前 300 檔</span>
+            </label>
+            <button 
+              type="button" 
+              onclick="executeKdScreener(true)" 
+              class="px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 active:bg-slate-600 text-slate-200 text-xs font-medium border border-slate-700 transition-colors flex items-center gap-1 cursor-pointer"
+            >
+              <span>🔄</span> 重新掃描
+            </button>
+          </div>
+        </div>
+
+        <!-- Two Tabs Navigation -->
+        <div class="flex border-b border-[#31333f] gap-2">
+          <button 
+            type="button" 
+            id="tabBtnOversold" 
+            onclick="switchScreenerTab('oversold')" 
+            class="px-4 py-2 text-xs font-bold border-b-2 border-emerald-500 text-emerald-400 flex items-center gap-1.5 cursor-pointer transition-colors"
+          >
+            <span>🟢 超賣金叉區 (K &gt; D 且 K &lt; 20)</span>
+            <span id="tabCountOversold" class="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-800">0</span>
+          </button>
+          <button 
+            type="button" 
+            id="tabBtnOverbought" 
+            onclick="switchScreenerTab('overbought')" 
+            class="px-4 py-2 text-xs font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 cursor-pointer transition-colors"
+          >
+            <span>🔴 超買死叉區 (K &lt; D 且 K &gt; 80)</span>
+            <span id="tabCountOverbought" class="px-1.5 py-0.2 rounded-full text-[10px] bg-rose-950 text-rose-300 border border-rose-800">0</span>
+          </button>
+        </div>
+
+        <!-- Tab 1: Oversold -->
+        <div id="tabPanelOversold" class="space-y-3">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between text-xs text-slate-400 gap-2">
+            <div>💡 <b>策略特性</b>：跌深築底、轉折向上，具備跌深反彈與左側安全邊際。</div>
+            <button 
+              type="button" 
+              onclick="addAllScreenerStocksToQuery('oversold')" 
+              class="px-3 py-1 rounded bg-emerald-900/60 hover:bg-emerald-800 text-emerald-200 border border-emerald-700/60 text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors self-start sm:self-auto"
+            >
+              <span>➕ 一鍵全加入查詢</span>
+            </button>
+          </div>
+          <div class="border border-[#31333f] rounded-lg overflow-x-auto scrollbar-thin bg-[#1a1c24]">
+            <table class="w-full text-left st-table border-collapse">
+              <thead>
+                <tr>
+                  <th>股票代號</th>
+                  <th>股票名稱</th>
+                  <th>現價</th>
+                  <th>今日漲跌幅</th>
+                  <th>9K</th>
+                  <th>9D</th>
+                  <th>狀態標記</th>
+                  <th class="text-center">快速加入查詢</th>
+                </tr>
+              </thead>
+              <tbody id="screenerOversoldTableBody" class="divide-y divide-[#262730]">
+                <!-- Filled dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Tab 2: Overbought -->
+        <div id="tabPanelOverbought" class="space-y-3 hidden">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between text-xs text-slate-400 gap-2">
+            <div>💡 <b>策略特性</b>：高檔過熱、動能竭盡，短線拉回風險偏高。</div>
+            <button 
+              type="button" 
+              onclick="addAllScreenerStocksToQuery('overbought')" 
+              class="px-3 py-1 rounded bg-rose-900/60 hover:bg-rose-800 text-rose-200 border border-rose-700/60 text-xs font-bold flex items-center gap-1 cursor-pointer transition-colors self-start sm:self-auto"
+            >
+              <span>➕ 一鍵全加入查詢</span>
+            </button>
+          </div>
+          <div class="border border-[#31333f] rounded-lg overflow-x-auto scrollbar-thin bg-[#1a1c24]">
+            <table class="w-full text-left st-table border-collapse">
+              <thead>
+                <tr>
+                  <th>股票代號</th>
+                  <th>股票名稱</th>
+                  <th>現價</th>
+                  <th>今日漲跌幅</th>
+                  <th>9K</th>
+                  <th>9D</th>
+                  <th>狀態標記</th>
+                  <th class="text-center">快速加入查詢</th>
+                </tr>
+              </thead>
+              <tbody id="screenerOverboughtTableBody" class="divide-y divide-[#262730]">
+                <!-- Filled dynamically -->
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
@@ -7751,26 +7833,65 @@
       renderAccordions();
     }
 
+    let isScreenerOpen = true;
+    function toggleScreenerDashboard() {
+      const contentEl = document.getElementById('screenerContent');
+      const chevronEl = document.getElementById('screenerChevron');
+      if (!contentEl) return;
+      isScreenerOpen = !isScreenerOpen;
+      if (isScreenerOpen) {
+        contentEl.classList.remove('hidden');
+        if (chevronEl) chevronEl.textContent = '▼';
+      } else {
+        contentEl.classList.add('hidden');
+        if (chevronEl) chevronEl.textContent = '▲';
+      }
+    }
+
+    let activeScreenerTab = 'oversold';
+    function switchScreenerTab(tabType) {
+      activeScreenerTab = tabType;
+      const tabOvs = document.getElementById('tabBtnOversold');
+      const tabOvb = document.getElementById('tabBtnOverbought');
+      const panelOvs = document.getElementById('tabPanelOversold');
+      const panelOvb = document.getElementById('tabPanelOverbought');
+
+      if (tabType === 'oversold') {
+        if (tabOvs) {
+          tabOvs.className = 'px-4 py-2 text-xs font-bold border-b-2 border-emerald-500 text-emerald-400 flex items-center gap-1.5 cursor-pointer transition-colors';
+        }
+        if (tabOvb) {
+          tabOvb.className = 'px-4 py-2 text-xs font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 cursor-pointer transition-colors';
+        }
+        if (panelOvs) panelOvs.classList.remove('hidden');
+        if (panelOvb) panelOvb.classList.add('hidden');
+      } else {
+        if (tabOvs) {
+          tabOvs.className = 'px-4 py-2 text-xs font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 flex items-center gap-1.5 cursor-pointer transition-colors';
+        }
+        if (tabOvb) {
+          tabOvb.className = 'px-4 py-2 text-xs font-bold border-b-2 border-rose-500 text-rose-400 flex items-center gap-1.5 cursor-pointer transition-colors';
+        }
+        if (panelOvs) panelOvs.classList.add('hidden');
+        if (panelOvb) panelOvb.classList.remove('hidden');
+      }
+    }
+
     let lastScreenerData = null;
 
-    async function triggerKdScreener(filterType) {
-      const isExpanded = document.getElementById('expandScanCheckbox')?.checked || false;
-      const btnOvs = document.getElementById('btnScreenerOversold');
-      const btnOvb = document.getElementById('btnScreenerOverbought');
-      const targetBtn = filterType === 'oversold' ? btnOvs : btnOvb;
-      const origHtml = targetBtn ? targetBtn.innerHTML : '';
-
-      if (targetBtn) {
-        targetBtn.disabled = true;
-        targetBtn.innerHTML = '<span class="inline-block animate-spin text-xs">⏳</span> <span class="text-[10px]">極速掃描中...</span>';
-      }
+    async function executeKdScreener(forceRefresh = false) {
+      const isExpanded = document.getElementById('expandScanCheckboxMain')?.checked || false;
+      const perfEl = document.getElementById('screenerPerfText');
+      const badgeEl = document.getElementById('screenerHeaderBadge');
+      if (badgeEl) badgeEl.textContent = '掃描中...';
 
       try {
         let resData = null;
         try {
           const ctrl = new AbortController();
           const tid = setTimeout(() => ctrl.abort(), 6500);
-          const resp = await fetch(`/api/screener?expanded=${isExpanded ? 'true' : 'false'}&t=${Date.now()}`, { signal: ctrl.signal });
+          const rfParam = forceRefresh ? `&rf=${Date.now()}` : '';
+          const resp = await fetch(`/api/screener?expanded=${isExpanded ? 'true' : 'false'}${rfParam}&t=${Date.now()}`, { signal: ctrl.signal });
           clearTimeout(tid);
           if (resp.ok) {
             resData = await resp.json();
@@ -7779,7 +7900,7 @@
           console.warn('API /api/screener unavailable, using client fallback:', e);
         }
 
-        // Fallback if API unreachable
+        // Client-side fallback if API unreachable
         if (!resData || (!resData.oversold && !resData.overbought)) {
           const ovs = [];
           const ovb = [];
@@ -7817,42 +7938,132 @@
           }
         }
 
-        // Update Scoreboard Banner
-        const ovsList = resData.oversold || [];
-        const ovbList = resData.overbought || [];
-        const bannerEl = document.getElementById('screenerScoreboardBanner');
-        const txtOvs = document.getElementById('scoreboardOversoldText');
-        const txtOvb = document.getElementById('scoreboardOverboughtText');
-        const txtPerf = document.getElementById('scoreboardPerfText');
+        renderScreenerTables(resData);
 
-        if (bannerEl) bannerEl.classList.remove('hidden');
-        if (txtOvs) txtOvs.textContent = `🟢 符合超賣金叉：共 ${ovsList.length} 檔`;
-        if (txtOvb) txtOvb.textContent = `🔴 符合超買死叉：共 ${ovbList.length} 檔`;
-        if (txtPerf) txtPerf.textContent = `⚡ 掃描 ${resData.total_scanned || 0} 檔 耗時 ${resData.elapsed_seconds || 0} 秒`;
-
-        const targetSyms = filterType === 'oversold' ? (resData.oversold_symbols || ovsList.map(s => s.symbol)) : (resData.overbought_symbols || ovbList.map(s => s.symbol));
-        const filterName = filterType === 'oversold' ? '【K>D 且 K<20 (超賣轉強)】' : '【K<D 且 K>80 (超買警戒)】';
-
-        if (targetSyms && targetSyms.length > 0) {
-          const inputEl = document.getElementById('stockInputArea');
-          if (inputEl) {
-            inputEl.value = targetSyms.join(', ');
-            inputEl.classList.remove('text-slate-500');
-            inputEl.classList.add('text-white');
-          }
-          await handleStockSubmit();
-        } else {
-          alert(`目前全市場活躍標的無符合 ${filterName} 此極端條件者。`);
+        if (perfEl) {
+          perfEl.textContent = `⚡ 已掃描 ${resData.total_scanned || 0} 檔 耗時 ${resData.elapsed_seconds || 0} 秒 (快取 120 秒)`;
+        }
+        if (badgeEl) {
+          const totalFound = (resData.oversold?.length || 0) + (resData.overbought?.length || 0);
+          badgeEl.textContent = `共 ${totalFound} 檔轉折標的`;
+          badgeEl.className = 'text-xs font-mono px-2 py-0.5 rounded bg-emerald-950/70 text-emerald-300 border border-emerald-800';
         }
       } catch (err) {
         console.error('Screener error:', err);
-        alert('選股執行失敗，請檢查網路連線後重試。');
-      } finally {
-        if (targetBtn) {
-          targetBtn.disabled = false;
-          targetBtn.innerHTML = origHtml;
+        if (badgeEl) badgeEl.textContent = '掃描完成';
+      }
+    }
+
+    function renderScreenerTables(data) {
+      if (!data) return;
+      const oversoldList = data.oversold || [];
+      const overboughtList = data.overbought || [];
+
+      // Update Tab Badges
+      const countOvsEl = document.getElementById('tabCountOversold');
+      const countOvbEl = document.getElementById('tabCountOverbought');
+      if (countOvsEl) countOvsEl.textContent = oversoldList.length;
+      if (countOvbEl) countOvbEl.textContent = overboughtList.length;
+
+      // Current search tokens to mark added items
+      const inputEl = document.getElementById('stockInputArea');
+      const curTokens = inputEl ? inputEl.value.split(/[,，;\s\n]+/).map(t => t.trim().toUpperCase()).filter(Boolean) : [];
+
+      function buildTableHtml(items, tabType) {
+        if (!items || items.length === 0) {
+          const msg = tabType === 'oversold' ? '目前全市場活躍標的無符合【超賣金叉：K > D 且 K < 20】條件者。' : '目前全市場活躍標的無符合【超買死叉：K < D 且 K > 80】條件者。';
+          return `
+            <tr>
+              <td colspan="8" class="p-6 text-center text-slate-400 bg-[#12141c]">
+                <div class="text-sm font-semibold text-slate-400">${msg}</div>
+              </td>
+            </tr>
+          `;
+        }
+
+        return items.map(s => {
+          const isUp = s.change_pct > 0;
+          const isDown = s.change_pct < 0;
+          const colorClass = isUp ? 'tw-up' : (isDown ? 'tw-down' : 'text-slate-300');
+          const sign = isUp ? '+' : '';
+          const cleanSym = s.symbol.trim().toUpperCase();
+          const baseCode = cleanSym.replace(/\.(TW|TWO)$/, '');
+          const isAdded = curTokens.includes(cleanSym) || curTokens.includes(baseCode);
+
+          const tagBadgeClass = tabType === 'oversold' ? 'bg-emerald-950/80 text-emerald-300 border-emerald-800' : 'bg-rose-950/80 text-rose-300 border-rose-800';
+
+          const actionBtn = isAdded 
+            ? `<span class="px-2 py-0.5 rounded text-[11px] font-medium text-slate-500 bg-slate-900 border border-slate-800 inline-block">✅ 已在清單</span>`
+            : `<button onclick="addStockToQuery('${s.symbol}')" class="px-2.5 py-1 rounded text-xs font-bold bg-cyan-700 hover:bg-cyan-600 active:bg-cyan-800 text-white border border-cyan-500 transition-all shadow-sm cursor-pointer flex items-center gap-1 mx-auto"><span>➕</span> 加入查詢</button>`;
+
+          return `
+            <tr class="hover:bg-[#1f222e]/60 transition-colors">
+              <td class="font-bold text-cyan-400 font-mono">${s.symbol}</td>
+              <td class="font-bold text-white">${s.name}</td>
+              <td class="font-bold font-mono text-white">$${s.latest_close.toFixed(2)}</td>
+              <td class="font-bold font-mono ${colorClass}">${sign}${s.change_pct.toFixed(2)}%</td>
+              <td class="font-bold font-mono text-amber-400">${s.k.toFixed(1)}</td>
+              <td class="font-bold font-mono text-cyan-400">${s.d.toFixed(1)}</td>
+              <td><span class="px-2 py-0.5 rounded text-[11px] font-semibold border ${tagBadgeClass}">${s.tag || ''}</span></td>
+              <td class="text-center">${actionBtn}</td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      const tbodyOvs = document.getElementById('screenerOversoldTableBody');
+      const tbodyOvb = document.getElementById('screenerOverboughtTableBody');
+      if (tbodyOvs) tbodyOvs.innerHTML = buildTableHtml(oversoldList, 'oversold');
+      if (tbodyOvb) tbodyOvb.innerHTML = buildTableHtml(overboughtList, 'overbought');
+    }
+
+    function addStockToQuery(symbol) {
+      const inputEl = document.getElementById('stockInputArea');
+      if (!inputEl) return;
+      const curVal = inputEl.value.trim();
+      const tokens = curVal.split(/[,，;\s\n]+/).map(t => t.trim().toUpperCase()).filter(Boolean);
+      const cleanSym = symbol.trim().toUpperCase();
+      const baseCode = cleanSym.replace(/\.(TW|TWO)$/, '');
+
+      if (tokens.includes(cleanSym) || tokens.includes(baseCode)) {
+        alert(`【${cleanSym}】已在目前的查詢清單中！`);
+        return;
+      }
+
+      const newVal = curVal ? `${curVal}, ${cleanSym}` : cleanSym;
+      inputEl.value = newVal;
+      inputEl.classList.remove('text-slate-500');
+      inputEl.classList.add('text-white');
+
+      handleStockSubmit();
+      if (lastScreenerData) renderScreenerTables(lastScreenerData);
+    }
+
+    function addAllScreenerStocksToQuery(tabType) {
+      if (!lastScreenerData) return;
+      const list = tabType === 'oversold' ? (lastScreenerData.oversold || []) : (lastScreenerData.overbought || []);
+      if (list.length === 0) return;
+
+      const inputEl = document.getElementById('stockInputArea');
+      if (!inputEl) return;
+      const curVal = inputEl.value.trim();
+      const tokens = curVal.split(/[,，;\s\n]+/).map(t => t.trim().toUpperCase()).filter(Boolean);
+      const newTokens = [...tokens];
+
+      for (const s of list) {
+        const sym = s.symbol.trim().toUpperCase();
+        const baseCode = sym.replace(/\.(TW|TWO)$/, '');
+        if (!newTokens.includes(sym) && !newTokens.includes(baseCode)) {
+          newTokens.push(sym);
         }
       }
+
+      inputEl.value = newTokens.join(', ');
+      inputEl.classList.remove('text-slate-500');
+      inputEl.classList.add('text-white');
+
+      handleStockSubmit();
+      if (lastScreenerData) renderScreenerTables(lastScreenerData);
     }
 
     let isMarketIndexOpen = true;
@@ -8226,9 +8437,10 @@
       renderTable();
       renderAccordions();
 
-      // Automatically sync latest market and stock prices in background
+      // Automatically sync latest market, stock prices and KD screener in background
       setTimeout(() => {
         refreshAllData();
+        executeKdScreener(false);
       }, 400);
     }
 
