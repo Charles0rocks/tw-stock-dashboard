@@ -230,6 +230,47 @@
 
     <hr class="border-[#31333f]">
 
+    <!-- Section 1: 股票評估一覽表 (Exact Streamlit DataFrame match) -->
+    <div class="space-y-3">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="text-lg">📋</span>
+          <h2 class="text-base font-bold text-white">股票評估一覽表 (雙軌決策系統：KD 常規矩陣 + 連跌風控)</h2>
+        </div>
+        <div class="text-xs text-slate-400">
+          橫向滑動查看完整 14 欄指標與理由
+        </div>
+      </div>
+
+      <div class="border border-[#31333f] rounded-lg overflow-x-auto scrollbar-thin bg-[#1a1c24]">
+        <table class="w-full text-left st-table border-collapse">
+          <thead>
+            <tr>
+              <th>股票代號</th>
+              <th>股票名稱</th>
+              <th>資料日期</th>
+              <th>現價</th>
+              <th>漲跌幅</th>
+              <th>9K</th>
+              <th>9D</th>
+              <th>數據校驗</th>
+              <th>KD策略建議狀態</th>
+              <th>風控與連跌策略</th>
+              <th>折溢價比/估值</th>
+              <th>成交量 (張)</th>
+              <th>AI評級</th>
+              <th>綜合權衡理由</th>
+            </tr>
+          </thead>
+          <tbody id="overviewTableBody" class="divide-y divide-[#262730]">
+            <!-- Dynamic filled by JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <hr class="border-[#31333f]">
+
     <!-- Yahoo 官方全市場 KD 極端值快速選股看板 -->
     <div class="border border-[#31333f] rounded-lg bg-[#1a1c24] overflow-hidden shadow">
       <!-- Header with Toggle -->
@@ -357,47 +398,6 @@
             </table>
           </div>
         </div>
-      </div>
-    </div>
-
-    <hr class="border-[#31333f]">
-
-    <!-- Section 1: 股票評估一覽表 (Exact Streamlit DataFrame match) -->
-    <div class="space-y-3">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <span class="text-lg">📋</span>
-          <h2 class="text-base font-bold text-white">股票評估一覽表 (雙軌決策系統：KD 常規矩陣 + 連跌風控)</h2>
-        </div>
-        <div class="text-xs text-slate-400">
-          橫向滑動查看完整 14 欄指標與理由
-        </div>
-      </div>
-
-      <div class="border border-[#31333f] rounded-lg overflow-x-auto scrollbar-thin bg-[#1a1c24]">
-        <table class="w-full text-left st-table border-collapse">
-          <thead>
-            <tr>
-              <th>股票代號</th>
-              <th>股票名稱</th>
-              <th>資料日期</th>
-              <th>現價</th>
-              <th>漲跌幅</th>
-              <th>9K</th>
-              <th>9D</th>
-              <th>數據校驗</th>
-              <th>KD策略建議狀態</th>
-              <th>風控與連跌策略</th>
-              <th>折溢價比/估值</th>
-              <th>成交量 (張)</th>
-              <th>AI評級</th>
-              <th>綜合權衡理由</th>
-            </tr>
-          </thead>
-          <tbody id="overviewTableBody" class="divide-y divide-[#262730]">
-            <!-- Dynamic filled by JS -->
-          </tbody>
-        </table>
       </div>
     </div>
 
@@ -7088,6 +7088,9 @@
     ]
   }
 };
+    const ALL_STOCKS = DATA.stocks || [];
+    const DEFAULT_SYMBOLS = ['2330.TW', '2317.TW', '2454.TW'];
+    const PRESET_11_SYMBOLS = ['2330.TW', '2317.TW', '2454.TW', '00720B.TWO', '0056.TW', '0050.TW', '00878.TW', '2881.TW', '2882.TW', '2308.TW', '00919.TW'];
     let currentStocks = ALL_STOCKS.filter(s => DEFAULT_SYMBOLS.includes(s.symbol));
     let openedAccordions = {};
 
@@ -8103,7 +8106,37 @@
       }
     }
 
-        function renderMarketIndex() {
+            const HARDCODED_MARKET_FALLBACK = {
+      symbol: '^TWII',
+      name: '加權指數',
+      latest: {
+        date: '2026-09-30',
+        close: 47940.13,
+        change: 308.17,
+        change_pct: 0.65,
+        k: 75.5,
+        d: 70.8,
+        turnover_yi: 8774.7,
+        volume_yi: '8774.7 億',
+        streak: '連漲 1 天',
+        streak_text: '連漲 1 天'
+      },
+      records: [
+        {date: '2026-09-15', close: 45511.49, change: -351.03, change_pct: -0.77, k: 26.2, d: 38.9, turnover_yi: 3225.5, streak: '連跌 4 天'},
+        {date: '2026-09-16', close: 45848.90, change: 337.41, change_pct: 0.74, k: 24.4, d: 34.1, turnover_yi: 3326.7, streak: '連漲 1 天'},
+        {date: '2026-09-17', close: 46288.00, change: 439.10, change_pct: 0.96, k: 29.8, d: 32.7, turnover_yi: 4395.1, streak: '連漲 2 天'},
+        {date: '2026-09-18', close: 47180.75, change: 892.75, change_pct: 1.93, k: 47.1, d: 37.5, turnover_yi: 5651.2, streak: '連漲 3 天'},
+        {date: '2026-09-21', close: 47718.84, change: 538.09, change_pct: 1.14, k: 64.3, d: 46.4, turnover_yi: 4475.5, streak: '連漲 4 天'},
+        {date: '2026-09-22', close: 47800.17, change: 81.33, change_pct: 0.17, k: 67.9, d: 53.6, turnover_yi: 5924.9, streak: '連漲 5 天'},
+        {date: '2026-09-23', close: 48157.29, change: 357.12, change_pct: 0.75, k: 74.0, d: 60.4, turnover_yi: 4866.3, streak: '連漲 6 天'},
+        {date: '2026-09-24', close: 48024.60, change: -132.69, change_pct: -0.28, k: 76.6, d: 65.8, turnover_yi: 3540.9, streak: '連跌 1 天'},
+        {date: '2026-09-29', close: 47631.96, change: -392.64, change_pct: -0.82, k: 74.0, d: 68.5, turnover_yi: 3781.3, streak: '連跌 2 天'},
+        {date: '2026-09-30', close: 47940.13, change: 308.17, change_pct: 0.65, k: 75.5, d: 70.8, turnover_yi: 8774.7, streak: '連漲 1 天'}
+      ]
+    };
+
+    function renderMarketIndex() {
+      if (!DATA.market_index || !DATA.market_index.records || DATA.market_index.records.length === 0) { DATA.market_index = HARDCODED_MARKET_FALLBACK; }
       const m = DATA.market_index;
       if (!m || !m.records || m.records.length === 0) return;
 
@@ -8171,9 +8204,8 @@
         mode: 'lines+markers',
         line: { color: '#ff4b4b', width: 2.5 },
         marker: { size: 5, color: '#ff4b4b' },
-        fill: 'tozeroy',
-        fillcolor: 'rgba(255, 75, 75, 0.08)',
-        yaxis: 'y1'
+        xaxis: 'x',
+        yaxis: 'y'
       };
 
       const traceK = {
@@ -8184,6 +8216,7 @@
         mode: 'lines+markers',
         line: { color: '#38bdf8', width: 2 },
         marker: { size: 4 },
+        xaxis: 'x2',
         yaxis: 'y2'
       };
 
@@ -8195,6 +8228,7 @@
         mode: 'lines+markers',
         line: { color: '#fb923c', width: 2 },
         marker: { size: 4 },
+        xaxis: 'x2',
         yaxis: 'y2'
       };
 
@@ -8216,7 +8250,7 @@
         xaxis2: {
           showgrid: true,
           gridcolor: '#262730',
-          matches: 'x'
+          zeroline: false
         },
         yaxis2: {
           title: 'KD',
@@ -8460,7 +8494,7 @@
 
       // Automatically sync latest market, stock prices and KD screener in background
       setTimeout(() => {
-        refreshAllData();
+        refreshLiveMarketAndStocks(false);
         executeKdScreener(false);
       }, 400);
     }

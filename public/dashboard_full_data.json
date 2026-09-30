@@ -6556,7 +6556,9 @@
       "k": 75.5,
       "d": 70.8,
       "turnover_yi": 8774.7,
-      "streak": "連漲 1 天"
+      "volume_yi": "8774.7 億",
+      "streak": "連漲 1 天",
+      "streak_text": "連漲 1 天"
     },
     "records": [
       {
