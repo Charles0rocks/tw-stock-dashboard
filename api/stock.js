@@ -167,99 +167,123 @@ function evaluateKdStrategy(k, d, isBond = false, history = null) {
   k = Number(k);
   d = Number(d);
 
-  // 1. 第一優先：債券標的低檔分流 (is_bond == True 且 K <= 30)
-  if (isBond && k <= 30.0) {
-    if (k > d) {
-      return {
-        strategy_state: '【低檔轉強／鎖利加碼】',
-        badge: '🟢 【低檔轉強／鎖利加碼】',
-        light: '🟢 加碼',
-        rating: '買進',
-        risk_control: '鎖利加碼部位，防範降息路徑反覆，以分批佈局領息為主',
-        reason: '核心KD狀態機：符合 債券低檔金叉 (is_bond 且 K <= 30, K > D) -> 【低檔轉強／鎖利加碼】'
-      };
-    } else {
-      return {
-        strategy_state: '【低檔鎖利／領息觀望】',
-        badge: '🟡 【低檔鎖利／領息觀望】',
-        light: '🟡 觀望',
-        rating: '中立',
-        risk_control: '現有部位安心領息，不盲目殺低，靜待KD由下往上金叉轉折',
-        reason: '核心KD狀態機：符合 債券低檔鈍化 (is_bond 且 K <= 30, K <= D) -> 【低檔鎖利／領息觀望】'
-      };
-    }
+  // 1. 債券型標的強制條款 (is_bond == True 且 K < D 且 K < 60)
+  if (isBond && k < d && k < 60.0) {
+    return {
+      strategy_state: '【低檔鎖利／蓋牌領息觀望】',
+      badge: '🟡 【低檔鎖利／蓋牌領息觀望】',
+      light: '🟡 觀望',
+      rating: '中立',
+      action_type: '中立',
+      risk_control: '現有部位安心領息，不盲目殺低，靜待KD由下往上金叉轉折',
+      reason: '債券核心本質為鎖定殖利率與領息，短線技術面死叉不具備個股崩跌風險，切勿砍在阿呆谷。'
+    };
   }
 
-  // 2. 第二優先：高檔超買區 (K >= 80)
-  if (k >= 80.0) {
-    if (k > d) {
+  // 債券低檔金叉分流 (is_bond == True 且 K <= 30 且 K > D)
+  if (isBond && k > d && k <= 30.0) {
+    return {
+      strategy_state: '【低檔轉強／鎖利加碼】',
+      badge: '🟢 【低檔轉強／鎖利加碼】',
+      light: '🟢 加碼',
+      rating: '買進',
+      action_type: '買進',
+      risk_control: '鎖利加碼部位，防範降息路徑反覆，以分批佈局領息為主',
+      reason: '債券跌深出現低檔黃金交叉，兼具高殖利率鎖利與反彈資本利得空間，啟動分批加碼。'
+    };
+  }
+
+  // 第一維度：K > D (多頭排列/轉強)
+  if (k > d) {
+    if (k >= 80.0) {
       return {
         strategy_state: '【續抱不追高】',
         badge: '🟢 【續抱不追高】',
         light: '🟢 續抱',
-        rating: '續抱',
-        risk_control: '設高檔移動停利點，嚴禁追高，若跌破5日線或死叉即刻獲利了結',
-        reason: '核心KD狀態機：符合 高檔超買鈍化 (K >= 80 且 K > D) -> 【續抱不追高】'
-      };
-    } else {
-      return {
-        strategy_state: '【高檔減碼／獲利了結】',
-        badge: '🔴 【高檔減碼／獲利了結】',
-        light: '🔴 減碼',
-        rating: '賣出',
-        risk_control: '即刻分批停利獲利了結，防動能竭盡後之大幅拉回修正',
-        reason: '核心KD狀態機：符合 高檔超買死叉 (K >= 80 且 K <= D) -> 【高檔減碼／獲利了結】'
-      };
-    }
-  }
-
-  // 3. 第三優先：一般股票之低檔超賣區 (is_bond == False 且 K <= 30)
-  if (!isBond && k <= 30.0) {
-    if (k > d) {
-      return {
-        strategy_state: '【低檔轉強／分批加碼】',
-        badge: '🟢 【低檔轉強／分批加碼】',
-        light: '🟢 加碼',
         rating: '買進',
-        risk_control: '設近9日最低點為紀律停損點，防無底跌勢續摔',
-        reason: '核心KD狀態機：符合 股票低檔超賣金叉 (K <= 30 且 K > D) -> 【低檔轉強／分批加碼】'
+        action_type: '買進',
+        risk_control: '設高檔移動停利點，嚴禁追高，若跌破5日線或死叉即刻獲利了結',
+        reason: '行情狂熱強勢噴出，嚴禁追價，持股續抱'
+      };
+    } else if (k >= 60.0) {
+      return {
+        strategy_state: '【順勢偏多／輕倉試單】',
+        badge: '🟢 【順勢偏多／輕倉試單】',
+        light: '🟢 偏多',
+        rating: '買進',
+        action_type: '買進',
+        risk_control: '多頭結構健康，展開波段攻擊，為波段買進或續抱勝率最高區',
+        reason: '多頭結構健康，展開波段攻擊，為波段買進或續抱勝率最高區'
+      };
+    } else if (k > 20.0) {
+      return {
+        strategy_state: '【多頭復甦／持股觀望】',
+        badge: '⚪ 【多頭復甦／持股觀望】',
+        light: '⚪ 觀望',
+        rating: '中立',
+        action_type: '中立',
+        risk_control: '股價自低檔爬升或中軸震盪，動能未完全爆發，持股續抱，空倉小量試單',
+        reason: '股價自低檔爬升或中軸震盪，動能未完全爆發，持股續抱，空倉小量試單'
       };
     } else {
-      const bottomRisk = checkBottomBreakRisk(history);
-      const riskWarning = bottomRisk.warning_msg;
-      const riskCtrl = bottomRisk.has_risk
-        ? `空方極弱勢鈍化；${riskWarning}，嚴格執行紀律停損`
-        : '空方主導嚴禁盲目攤平接刀，跌破前低支撐務必嚴格執行停損';
       return {
-        strategy_state: '【空方鈍化／禁止接刀】',
-        badge: '🔴 【空方鈍化／禁止接刀】',
-        light: '🔴 警戒',
-        rating: '賣出',
-        risk_control: riskCtrl,
-        risk_warning: riskWarning,
-        reason: `核心KD狀態機：符合 股票低檔超賣死叉 (K <= 30 且 K <= D) -> 【空方鈍化／禁止接刀】${riskWarning ? '；' + riskWarning : ''}`
+        strategy_state: '【低檔黃金交叉／分批佈局】',
+        badge: '🟢 【低檔黃金交叉／分批佈局】',
+        light: '🟢 佈局',
+        rating: '買進',
+        action_type: '買進',
+        risk_control: '跌深後主力扭轉訊號，為落後補漲起漲點，適合分批建倉',
+        reason: '跌深後主力扭轉訊號，為落後補漲起漲點，適合分批建倉'
       };
     }
   }
 
-  // 4. 第四優先：中軸震盪區 (30 < K < 80)
-  if (k > d) {
+  // 第二維度：K <= D (空頭排列/轉弱)
+  if (k >= 80.0) {
     return {
-      strategy_state: '【偏多持股】',
-      badge: '🟢 【偏多持股】',
-      light: '🟢 偏多',
-      rating: '買進',
-      risk_control: '設常規移動停利（如10日均線或KD死叉），部位順勢續抱',
-      reason: '核心KD狀態機：符合 中軸偏多 (30 < K < 80 且 K > D) -> 【偏多持股】'
+      strategy_state: '【高檔死叉／獲利了結】',
+      badge: '🔴 【高檔死叉／獲利了結】',
+      light: '🔴 賣出',
+      rating: '賣出',
+      action_type: '賣出',
+      risk_control: '即刻分批停利獲利了結，防動能竭盡後之大幅拉回修正',
+      reason: '高檔見頂回落，多頭力道竭盡，果斷落袋為安'
+    };
+  } else if (k >= 60.0) {
+    return {
+      strategy_state: '【持股觀望／停止加碼】',
+      badge: '⚪ 【持股觀望／停止加碼】',
+      light: '⚪ 觀望',
+      rating: '中立',
+      action_type: '中立',
+      risk_control: '不急著砍倉，但也不宜進場，靜待量價沉澱',
+      reason: '不急著砍倉，但也不宜進場，靜待量價沉澱'
+    };
+  } else if (k > 20.0) {
+    return {
+      strategy_state: '【持股觀望／禁止加碼】',
+      badge: '⚪ 【持股觀望／禁止加碼】',
+      light: '⚪ 觀望',
+      rating: '中立',
+      action_type: '中立',
+      risk_control: '進入波段修正，賣出稍嫌太晚，絕對禁止進場攤平，耐性等止穩',
+      reason: '進入波段修正，賣出稍嫌太晚，絕對禁止進場攤平，耐性等止穩'
     };
   } else {
+    const bottomRisk = checkBottomBreakRisk(history);
+    const riskWarning = bottomRisk.warning_msg;
+    const riskCtrl = bottomRisk.has_risk
+      ? `低檔鈍化觀望；${riskWarning}，嚴禁殺低認賠`
+      : '股價跌至阿呆谷極低點，禁止認賠割肉，靜待落底反彈';
     return {
-      strategy_state: '【持股觀望】',
-      badge: '⚪ 【持股觀望】',
-      light: '⚪ 中立',
+      strategy_state: '【低檔觀望／嚴禁殺低】',
+      badge: '🟡 【低檔觀望／嚴禁殺低】',
+      light: '🟡 觀望',
       rating: '中立',
-      risk_control: '中立整理區間多看少做，停止追加部位，靜待量能表態或金叉',
-      reason: '核心KD狀態機：符合 中軸中立整理 (30 < K < 80 且 K <= D) -> 【持股觀望】'
+      action_type: '中立',
+      risk_control: riskCtrl,
+      risk_warning: riskWarning,
+      reason: `股價跌至阿呆谷極低點，禁止認賠割肉，靜待落底反彈${riskWarning ? '；' + riskWarning : ''}`
     };
   }
 }

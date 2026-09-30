@@ -79,52 +79,36 @@ def evaluate_deterministic_kd_state(
     prev_d: float = None
 ) -> dict:
     """
-    二、KD 策略狀態機實裝 (嚴格依照下列四大優先順序與條件判定)：
+    KD 雙向區間智慧操作策略矩陣：
+    1. 債券型標的強制條款 (is_bond == True)：
+       - IF K < D AND K < 60:
+         * status = "【低檔鎖利／蓋牌領息觀望】"
+         * action_type = "中立" (非賣出！)
+         * desc = "債券核心本質為鎖定殖利率與領息，短線技術面死叉不具備個股崩跌風險，切勿砍在阿呆谷。"
+       - IF K > D AND K <= 30:
+         * status = "【低檔轉強／鎖利加碼】"
+         * action_type = "買進"
+         * desc = "債券跌深出現低檔黃金交叉，兼具高殖利率鎖利與反彈資本利得空間，啟動分批加碼。"
 
-    1. 【第一優先：債券標的低檔分流 (is_bond == True 且 K <= 30)】
-       - IF is_bond AND K <= 30:
-         * IF K > D:
-           - 狀態文字 = "【低檔轉強／鎖利加碼】"
-           - 燈號 = 🟢 加碼
-           - 說明 = "債券跌深出現低檔黃金交叉，兼具高殖利率鎖利與反彈資本利得空間，啟動分批加碼。"
-         * IF K <= D:
-           - 狀態文字 = "【低檔鎖利／領息觀望】"
-           - 燈號 = 🟡 觀望
-           - 說明 = "固定收益標的具保底息收特質，低檔鈍化不殺低，現有部位安心領息，靜待動能止穩。"
-
-    2. 【第二優先：高檔超買區 (K >= 80)】
+    2. 第一維度：K > D (多頭排列/轉強)：
        - IF K >= 80:
-         * IF K > D:
-           - 狀態文字 = "【續抱不追高】"
-           - 燈號 = 🟢 續抱
-           - 說明 = "多頭強勢但正乖離擴大，持股續抱，嚴禁追高，隨時注意反轉風險。"
-         * IF K <= D:
-           - 狀態文字 = "【高檔減碼／獲利了結】"
-           - 燈號 = 🔴 減碼
-           - 說明 = "高檔動能竭盡並向下死叉，啟動波段減碼，鎖定獲利。"
+         * status = "【續抱不追高】" (action_type = "買進", desc = "行情狂熱強勢噴出，嚴禁追價，持股續抱")
+       - ELSE IF 60 <= K < 80:
+         * status = "【順勢偏多／輕倉試單】" (action_type = "買進", desc = "多頭結構健康，展開波段攻擊，為波段買進或續抱勝率最高區")
+       - ELSE IF 20 < K < 60:
+         * status = "【多頭復甦／持股觀望】" (action_type = "中立", desc = "股價自低檔爬升或中軸震盪，動能未完全爆發，持股續抱，空倉小量試單")
+       - ELSE IF K <= 20:
+         * status = "【低檔黃金交叉／分批佈局】" (action_type = "買進", desc = "跌深後主力扭轉訊號，為落後補漲起漲點，適合分批建倉")
 
-    3. 【第三優先：一般股票之低檔超賣區 (is_bond == False 且 K <= 30)】
-       - IF not is_bond AND K <= 30:
-         * IF K > D:
-           - 狀態文字 = "【低檔轉強／分批加碼】"
-           - 燈號 = 🟢 加碼
-           - 說明 = "超賣區出現低檔黃金交叉，跌深落後補漲，啟動左側分批加碼。"
-         * IF K <= D:
-           - 狀態文字 = "【空方鈍化／禁止接刀】"
-           - 燈號 = 🔴 警戒
-           - 說明 = "指標低檔鈍化，空方主導嚴禁盲目攤平，跌破前低仍須紀律停損。"
-           - 風控聯動：主動檢查是否符合「光腳黑棒收最低」或「無量陰跌破底」，若符合則追加警示「⚠️ 留意空方慣性破底，未見長下影線或爆量前切勿進場」。
-
-    4. 【第四優先：中軸震盪區 (30 < K < 80)】
-       - ELSE:
-         * IF K > D:
-           - 狀態文字 = "【偏多持股】"
-           - 燈號 = 🟢 偏多
-           - 說明 = "股價重回多頭軌道，部位順勢續抱。"
-         * IF K <= D:
-           - 狀態文字 = "【持股觀望】"
-           - 燈號 = ⚪ 中立
-           - 說明 = "盤勢進入中性整理，停止追加部位，靜待方向明朗。"
+    3. 第二維度：K < D (空頭排列/轉弱)：
+       - IF K >= 80:
+         * status = "【高檔死叉／獲利了結】" (action_type = "賣出", desc = "高檔見頂回落，多頭力道竭盡，果斷落袋為安")
+       - ELSE IF 60 <= K < 80:
+         * status = "【持股觀望／停止加碼】" (action_type = "中立", desc = "不急著砍倉，但也不宜進場，靜待量價沉澱")
+       - ELSE IF 20 < K < 60:
+         * status = "【持股觀望／禁止加碼】" (action_type = "中立", desc = "進入波段修正，賣出稍嫌太晚，絕對禁止進場攤平，耐性等止穩")
+       - ELSE IF K <= 20:
+         * status = "【低檔觀望／嚴禁殺低】" (action_type = "中立", desc = "股價跌至阿呆谷極低點，禁止認賠割肉，靜待落底反彈")
     """
     k = float(k)
     d = float(d)
@@ -140,91 +124,99 @@ def evaluate_deterministic_kd_state(
     risk_warning = ""
     bottom_break = {"has_risk": False, "reasons": [], "warning_msg": ""}
 
-    # 1. 第一優先：債券標的低檔分流 (is_bond == True 且 K <= 30)
-    if is_bond and k <= 30.0:
-        if k > d:
-            label = "【低檔轉強／鎖利加碼】"
-            light = "🟢 加碼"
-            badge = "🟢 【低檔轉強／鎖利加碼】"
-            rec = "買進"
-            rule_name = "債券低檔金叉 (is_bond 且 K <= 30, K > D)"
-            desc = "債券跌深出現低檔黃金交叉，兼具高殖利率鎖利與反彈資本利得空間，啟動分批加碼。"
-            risk_ctrl = "鎖利加碼部位，防範降息路徑反覆，以分批佈局領息為主"
-        else:
-            label = "【低檔鎖利／領息觀望】"
-            light = "🟡 觀望"
-            badge = "🟡 【低檔鎖利／領息觀望】"
-            rec = "中立"
-            rule_name = "債券低檔鈍化 (is_bond 且 K <= 30, K <= D)"
-            desc = "固定收益標的具保底息收特質，低檔鈍化不殺低，現有部位安心領息，靜待動能止穩。"
-            risk_ctrl = "現有部位安心領息，不盲目殺低，靜待KD由下往上金叉轉折"
+    # 1. 債券型標的強制條款 (is_bond == True 且 K < D 且 K < 60)
+    if is_bond and k < d and k < 60.0:
+        status = "【低檔鎖利／蓋牌領息觀望】"
+        action_type = "中立"
+        light = "🟡 觀望"
+        desc = "債券核心本質為鎖定殖利率與領息，短線技術面死叉不具備個股崩跌風險，切勿砍在阿呆谷。"
+        risk_ctrl = "現有部位安心領息，不盲目殺低，靜待KD由下往上金叉轉折"
+        rule_name = "債券低檔鎖利觀望 (is_bond 且 K < D 且 K < 60)"
 
-    # 2. 第二優先：高檔超買區 (K >= 80)
-    elif k >= 80.0:
-        if k > d:
-            label = "【續抱不追高】"
+    # 債券低檔金叉分流 (is_bond == True 且 K <= 30 且 K > D)
+    elif is_bond and k > d and k <= 30.0:
+        status = "【低檔轉強／鎖利加碼】"
+        action_type = "買進"
+        light = "🟢 加碼"
+        desc = "債券跌深出現低檔黃金交叉，兼具高殖利率鎖利與反彈資本利得空間，啟動分批加碼。"
+        risk_ctrl = "鎖利加碼部位，防範降息路徑反覆，以分批佈局領息為主"
+        rule_name = "債券低檔金叉 (is_bond 且 K <= 30 且 K > D)"
+
+    # 2. 第一維度：K > D (多頭排列/轉強)
+    elif k > d:
+        if k >= 80.0:
+            status = "【續抱不追高】"
+            action_type = "買進"
             light = "🟢 續抱"
-            badge = "🟢 【續抱不追高】"
-            rec = "續抱"
-            rule_name = "高檔超買鈍化 (K >= 80 且 K > D)"
-            desc = "多頭強勢但正乖離擴大，持股續抱，嚴禁追高，隨時注意反轉風險。"
+            desc = "行情狂熱強勢噴出，嚴禁追價，持股續抱"
             risk_ctrl = "設高檔移動停利點，嚴禁追高，若跌破5日線或死叉即刻獲利了結"
-        else:
-            label = "【高檔減碼／獲利了結】"
-            light = "🔴 減碼"
-            badge = "🔴 【高檔減碼／獲利了結】"
-            rec = "賣出"
-            rule_name = "高檔超買死叉 (K >= 80 且 K <= D)"
-            desc = "高檔動能竭盡並向下死叉，啟動波段減碼，鎖定獲利。"
-            risk_ctrl = "即刻分批停利獲利了結，防動能竭盡後之大幅拉回修正"
+            rule_name = "高檔超買鈍化 (K >= 80 且 K > D)"
+        elif k >= 60.0:
+            status = "【順勢偏多／輕倉試單】"
+            action_type = "買進"
+            light = "🟢 偏多"
+            desc = "多頭結構健康，展開波段攻擊，為波段買進或續抱勝率最高區"
+            risk_ctrl = "順勢操作，以波段持有為主，跌破短期支撐再行調節"
+            rule_name = "中高軸偏多攻擊 (60 <= K < 80 且 K > D)"
+        elif k > 20.0:
+            status = "【多頭復甦／持股觀望】"
+            action_type = "中立"
+            light = "⚪ 觀望"
+            desc = "股價自低檔爬升或中軸震盪，動能未完全爆發，持股續抱，空倉小量試單"
+            risk_ctrl = "持股續抱，空倉小量試單，不宜重倉追價，觀察量能是否放大"
+            rule_name = "中低軸多頭復甦 (20 < K < 60 且 K > D)"
+        else: # k <= 20.0
+            status = "【低檔黃金交叉／分批佈局】"
+            action_type = "買進"
+            light = "🟢 佈局"
+            desc = "跌深後主力扭轉訊號，為落後補漲起漲點，適合分批建倉"
+            risk_ctrl = "設近9日低點為紀律停損，採左側分批逢低承接策略"
+            rule_name = "極端超賣金叉 (K <= 20 且 K > D)"
 
-    # 3. 第三優先：一般股票之低檔超賣區 (is_bond == False 且 K <= 30)
-    elif (not is_bond) and k <= 30.0:
-        if k > d:
-            label = "【低檔轉強／分批加碼】"
-            light = "🟢 加碼"
-            badge = "🟢 【低檔轉強／分批加碼】"
-            rec = "買進"
-            rule_name = "股票低檔超賣金叉 (K <= 30 且 K > D)"
-            desc = "超賣區出現低檔黃金交叉，跌深落後補漲，啟動左側分批加碼。"
-            risk_ctrl = "設近9日最低點為紀律停損點，防無底跌勢續摔"
-        else:
-            label = "【空方鈍化／禁止接刀】"
-            light = "🔴 警戒"
-            badge = "🔴 【空方鈍化／禁止接刀】"
-            rec = "賣出"
-            rule_name = "股票低檔超賣死叉 (K <= 30 且 K <= D)"
-            desc = "指標低檔鈍化，空方主導嚴禁盲目攤平，跌破前低仍須紀律停損。"
+    # 3. 第二維度：K <= D (空頭排列/轉弱)
+    else:
+        if k >= 80.0:
+            status = "【高檔死叉／獲利了結】"
+            action_type = "賣出"
+            light = "🔴 賣出"
+            desc = "高檔見頂回落，多頭力道竭盡，果斷落袋為安"
+            risk_ctrl = "即刻分批停利獲利了結，防動能竭盡後之大幅拉回修正"
+            rule_name = "高檔超買死叉 (K >= 80 且 K <= D)"
+        elif k >= 60.0:
+            status = "【持股觀望／停止加碼】"
+            action_type = "中立"
+            light = "⚪ 觀望"
+            desc = "不急著砍倉，但也不宜進場，靜待量價沉澱"
+            risk_ctrl = "停止加碼，觀察是否守穩關鍵均線，多看少做"
+            rule_name = "中高軸死叉整理 (60 <= K < 80 且 K <= D)"
+        elif k > 20.0:
+            status = "【持股觀望／禁止加碼】"
+            action_type = "中立"
+            light = "⚪ 觀望"
+            desc = "進入波段修正，賣出稍嫌太晚，絕對禁止進場攤平，耐性等止穩"
+            risk_ctrl = "絕對禁止盲目攤平，靜待指標落底止穩或長下影線訊號"
+            rule_name = "中低軸波段修正 (20 < K < 60 且 K <= D)"
+        else: # k <= 20.0
+            status = "【低檔觀望／嚴禁殺低】"
+            action_type = "中立"
+            light = "🟡 觀望"
+            desc = "股價跌至阿呆谷極低點，禁止認賠割肉，靜待落底反彈"
             bottom_break = check_bottom_break_risk(df)
             if bottom_break["has_risk"]:
                 risk_warning = bottom_break["warning_msg"]
-                risk_ctrl = f"空方極弱勢鈍化；{risk_warning}，嚴格執行紀律停損"
+                risk_ctrl = f"低檔鈍化觀望；{risk_warning}，嚴禁殺低認賠"
             else:
-                risk_ctrl = "空方主導嚴禁盲目攤平接刀，跌破前低支撐務必嚴格執行停損"
+                risk_ctrl = "股價跌至極低位階阿呆谷，禁止認賠割肉，耐性等待落底轉折"
+            rule_name = "極端超賣觀望 (K <= 20 且 K <= D)"
 
-    # 4. 第四優先：中軸震盪區 (30 < K < 80)
-    else:
-        if k > d:
-            label = "【偏多持股】"
-            light = "🟢 偏多"
-            badge = "🟢 【偏多持股】"
-            rec = "買進"
-            rule_name = "中軸偏多 (30 < K < 80 且 K > D)"
-            desc = "股價重回多頭軌道，部位順勢續抱。"
-            risk_ctrl = "設常規移動停利（如10日均線或KD死叉），部位順勢續抱"
-        else:
-            label = "【持股觀望】"
-            light = "⚪ 中立"
-            badge = "⚪ 【持股觀望】"
-            rec = "中立"
-            rule_name = "中軸中立整理 (30 < K < 80 且 K <= D)"
-            desc = "盤勢進入中性整理，停止追加部位，靜待方向明朗。"
-            risk_ctrl = "中立整理區間多看少做，停止追加部位，靜待量能表態或金叉"
+    badge = f"{light.split()[0]} {status}"
 
     return {
         "rule_name": rule_name,
-        "recommendation": rec,
-        "label": label,
+        "recommendation": action_type,
+        "action_type": action_type,
+        "label": status,
+        "status": status,
         "light": light,
         "badge": badge,
         "strategy_desc": desc,
@@ -597,6 +589,8 @@ def evaluate_dual_track_system(
         "track1": track1,
         "track2": track2,
         "strategy_state": track1["label"],             # 總覽表格【KD策略建議狀態】
+        "strategy_badge": track1["badge"],
+        "action_type": track1["action_type"],
         "risk_control": track2["action_text"],          # 總覽表格【風控與連跌策略】
         "risk_badge": track2.get("badge", "🛡️ 設移動停利"),
         "drop_streak": streak,

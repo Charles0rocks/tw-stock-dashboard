@@ -54,12 +54,13 @@ def rule_based_fallback(
         reasons.append("已整合上傳策略研報附件條件")
         
     # Standardize rating into main bucket considering dual tracks
+    action_type = track1.get("action_type", track1.get("recommendation", "中立"))
     if track2.get("warning"):
         # If Track 2 triggers severe continuation warning, pull rating back to 中立 / 暫緩
         rating = "中立"
-    elif "買進" in base_recommendation or "加碼" in base_recommendation:
+    elif action_type == "買進":
         rating = "買進"
-    elif "賣出" in base_recommendation:
+    elif action_type == "賣出":
         rating = "賣出"
     else:
         rating = "中立"
@@ -177,11 +178,15 @@ def analyze_stock_with_ai(
         
         parsed = json.loads(cleaned_text)
         
-        rating = parsed.get("rating", track1["recommendation"])
+        rating = parsed.get("rating", track1.get("recommendation", "中立"))
+        action_type = track1.get("action_type", track1.get("recommendation", "中立"))
         if track2.get("warning"):
             rating = "中立"
+        elif action_type == "中立" and rating == "賣出":
+            # 凡是「持股觀望」、「禁止加碼」、「停止加碼」、「多頭復甦」、「蓋牌領息」一律歸類為【中立／觀望】，絕不得算入「建議賣出」
+            rating = "中立"
         elif rating not in ["買進", "中立", "賣出"]:
-            rating = "買進" if "買進" in track1["recommendation"] else ("賣出" if "賣出" in track1["recommendation"] else "中立")
+            rating = action_type
             
         strategy_state = parsed.get("strategy_state", dual_res["strategy_state"])
         risk_control = parsed.get("risk_control", dual_res["risk_control"])

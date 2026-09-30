@@ -563,11 +563,16 @@ for item in analyzed_data:
     d_str = f"{d_val:.2f}" if (d_val is not None and round(d_val, 1) != round(d_val, 2)) else (f"{d_val:.1f}" if d_val is not None else "N/A")
 
     raw_state = ai.get("strategy_state", "【持股觀望】")
-    if "鎖利加碼" in raw_state or "分批加碼" in raw_state or "偏多持股" in raw_state or "續抱" in raw_state:
+    track1_badge = ai.get("track1", {}).get("badge")
+    if track1_badge:
+        state_badge = track1_badge
+    elif any(raw_state.startswith(icon) for icon in ["🟢", "🟡", "🔴", "⚪"]):
+        state_badge = raw_state
+    elif any(kw in raw_state for kw in ["鎖利加碼", "分批加碼", "順勢偏多", "偏多", "續抱", "分批佈局"]):
         state_badge = f"🟢 {raw_state}"
-    elif "領息觀望" in raw_state:
+    elif any(kw in raw_state for kw in ["領息觀望", "嚴禁殺低", "觀望／嚴禁殺低"]):
         state_badge = f"🟡 {raw_state}"
-    elif "禁止接刀" in raw_state or "獲利了結" in raw_state or "減碼" in raw_state:
+    elif any(kw in raw_state for kw in ["獲利了結", "減碼", "死叉", "禁止接刀"]):
         state_badge = f"🔴 {raw_state}"
     else:
         state_badge = f"⚪ {raw_state}"
@@ -633,16 +638,16 @@ for item in analyzed_data:
     strategy_state = ai.get("strategy_state", "【持股觀望】")
     risk_text = ai.get("risk_control", "設移動停利")
     
-    card_state_badge = strategy_state
-    if not any(strategy_state.startswith(icon) for icon in ["🟢", "🟡", "🔴", "⚪"]):
-        if "鎖利加碼" in strategy_state or "分批加碼" in strategy_state or "偏多持股" in strategy_state or "續抱" in strategy_state:
-            card_state_badge = f"🟢 {strategy_state}"
-        elif "領息觀望" in strategy_state:
-            card_state_badge = f"🟡 {strategy_state}"
-        elif "禁止接刀" in strategy_state or "獲利了結" in strategy_state or "減碼" in strategy_state:
-            card_state_badge = f"🔴 {strategy_state}"
+    card_state_badge = ai.get("track1", {}).get("badge") or strategy_state
+    if not any(card_state_badge.startswith(icon) for icon in ["🟢", "🟡", "🔴", "⚪"]):
+        if any(kw in card_state_badge for kw in ["鎖利加碼", "分批加碼", "順勢偏多", "偏多", "續抱", "分批佈局"]):
+            card_state_badge = f"🟢 {card_state_badge}"
+        elif any(kw in card_state_badge for kw in ["領息觀望", "嚴禁殺低", "觀望／嚴禁殺低"]):
+            card_state_badge = f"🟡 {card_state_badge}"
+        elif any(kw in card_state_badge for kw in ["獲利了結", "減碼", "死叉", "禁止接刀"]):
+            card_state_badge = f"🔴 {card_state_badge}"
         else:
-            card_state_badge = f"⚪ {strategy_state}"
+            card_state_badge = f"⚪ {card_state_badge}"
     
     expander_title = f"{rating_icon} 【{sd['symbol']}】{sd['name']} | 現價: ${sd['latest_close']:.2f} ({sd['change_pct']:+.2f}%) | KD: {card_state_badge} | 風控: {risk_text} | AI評級: {rating}"
     

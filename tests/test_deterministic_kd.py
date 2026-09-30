@@ -16,7 +16,6 @@ from src.strategy_engine import (
     evaluate_track1_kd,
     evaluate_dual_track_system
 )
-from src.stock_data import evaluate_kd_strategy_rule, get_kd_signal
 
 class TestDeterministicKD(unittest.TestCase):
     def test_check_is_bond(self):
@@ -41,39 +40,67 @@ class TestDeterministicKD(unittest.TestCase):
         self.assertFalse(check_is_bond("0056.TW", "元大高股息"))
         self.assertFalse(check_is_bond("00878.TW", "國泰永續高股息"))
 
-    def test_priority1_bond_low_zone(self):
+    def test_bond_mandatory_clause(self):
+        # 驗證 00720B（K=30.4, D=47.5）：命中債券條款 -> 【低檔鎖利／蓋牌領息觀望】，評級為「中立」
+        res_00720b = evaluate_deterministic_kd_state(k=30.4, d=47.5, is_bond=True)
+        self.assertEqual(res_00720b["label"], "【低檔鎖利／蓋牌領息觀望】")
+        self.assertEqual(res_00720b["action_type"], "中立")
+        self.assertEqual(res_00720b["recommendation"], "中立")
+        self.assertEqual(res_00720b["light"], "🟡 觀望")
+        self.assertIn("切勿砍在阿呆谷", res_00720b["strategy_desc"])
+
         # 債券低檔金叉 (is_bond=True, K <= 30, K > D)
         res_gold = evaluate_deterministic_kd_state(k=15.0, d=10.0, is_bond=True)
         self.assertEqual(res_gold["label"], "【低檔轉強／鎖利加碼】")
+        self.assertEqual(res_gold["action_type"], "買進")
         self.assertEqual(res_gold["light"], "🟢 加碼")
-        self.assertIn("鎖利", res_gold["strategy_desc"])
-        self.assertIn("加碼", res_gold["strategy_desc"])
 
-        # 債券低檔死叉 (is_bond=True, K <= 30, K < D)
-        res_dead = evaluate_deterministic_kd_state(k=8.0, d=16.0, is_bond=True)
-        self.assertEqual(res_dead["label"], "【低檔鎖利／領息觀望】")
-        self.assertEqual(res_dead["light"], "🟡 觀望")
-        self.assertIn("安心領息", res_dead["strategy_desc"])
+    def test_dimension1_bullish_k_over_d(self):
+        # K >= 80: 【續抱不追高】 (買進)
+        res_80 = evaluate_deterministic_kd_state(k=85.0, d=80.0, is_bond=False)
+        self.assertEqual(res_80["label"], "【續抱不追高】")
+        self.assertEqual(res_80["action_type"], "買進")
+        self.assertEqual(res_80["light"], "🟢 續抱")
 
-    def test_priority2_high_overbought(self):
-        # 高檔超買鈍化/金叉 (K >= 80, K > D)
-        res_high_gold = evaluate_deterministic_kd_state(k=85.0, d=80.0, is_bond=False)
-        self.assertEqual(res_high_gold["label"], "【續抱不追高】")
-        self.assertEqual(res_high_gold["light"], "🟢 續抱")
+        # 60 <= K < 80: 【順勢偏多／輕倉試單】 (買進)
+        res_60 = evaluate_deterministic_kd_state(k=72.0, d=68.0, is_bond=False)
+        self.assertEqual(res_60["label"], "【順勢偏多／輕倉試單】")
+        self.assertEqual(res_60["action_type"], "買進")
+        self.assertEqual(res_60["light"], "🟢 偏多")
 
-        # 高檔超買死叉 (K >= 80, K < D)
-        res_high_dead = evaluate_deterministic_kd_state(k=82.0, d=86.0, is_bond=False)
-        self.assertEqual(res_high_dead["label"], "【高檔減碼／獲利了結】")
-        self.assertEqual(res_high_dead["light"], "🔴 減碼")
+        # 20 < K < 60: 【多頭復甦／持股觀望】 (中立)
+        res_mid = evaluate_deterministic_kd_state(k=55.0, d=45.0, is_bond=False)
+        self.assertEqual(res_mid["label"], "【多頭復甦／持股觀望】")
+        self.assertEqual(res_mid["action_type"], "中立")
+        self.assertEqual(res_mid["light"], "⚪ 觀望")
 
-    def test_priority3_stock_low_zone(self):
-        # 股票低檔超賣金叉 (is_bond=False, K <= 30, K > D)
-        res_stock_gold = evaluate_deterministic_kd_state(k=18.0, d=12.0, is_bond=False)
-        self.assertEqual(res_stock_gold["label"], "【低檔轉強／分批加碼】")
-        self.assertEqual(res_stock_gold["light"], "🟢 加碼")
+        # K <= 20: 【低檔黃金交叉／分批佈局】 (買進)
+        res_low = evaluate_deterministic_kd_state(k=18.0, d=12.0, is_bond=False)
+        self.assertEqual(res_low["label"], "【低檔黃金交叉／分批佈局】")
+        self.assertEqual(res_low["action_type"], "買進")
+        self.assertEqual(res_low["light"], "🟢 佈局")
 
-        # 股票低檔超賣死叉 (is_bond=False, K <= 30, K < D)
-        # 建立破底測試資料
+    def test_dimension2_bearish_k_under_d(self):
+        # K >= 80: 【高檔死叉／獲利了結】 (賣出)
+        res_80 = evaluate_deterministic_kd_state(k=82.0, d=86.0, is_bond=False)
+        self.assertEqual(res_80["label"], "【高檔死叉／獲利了結】")
+        self.assertEqual(res_80["action_type"], "賣出")
+        self.assertEqual(res_80["light"], "🔴 賣出")
+
+        # 60 <= K < 80 (如 0056 K=66.4, D=69.1): 【持股觀望／停止加碼】 (中立)
+        res_0056 = evaluate_deterministic_kd_state(k=66.4, d=69.1, is_bond=False)
+        self.assertEqual(res_0056["label"], "【持股觀望／停止加碼】")
+        self.assertEqual(res_0056["action_type"], "中立")
+        self.assertEqual(res_0056["recommendation"], "中立")
+        self.assertEqual(res_0056["light"], "⚪ 觀望")
+
+        # 20 < K < 60: 【持股觀望／禁止加碼】 (中立)
+        res_mid = evaluate_deterministic_kd_state(k=45.0, d=55.0, is_bond=False)
+        self.assertEqual(res_mid["label"], "【持股觀望／禁止加碼】")
+        self.assertEqual(res_mid["action_type"], "中立")
+        self.assertEqual(res_mid["light"], "⚪ 觀望")
+
+        # K <= 20: 【低檔觀望／嚴禁殺低】 (中立)
         dates = pd.date_range("2026-09-01", periods=10)
         df_break = pd.DataFrame({
             "Open": [100, 99, 98, 97, 96, 95, 94, 93, 92, 91],
@@ -83,36 +110,41 @@ class TestDeterministicKD(unittest.TestCase):
             "Volume": [1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 500]
         }, index=dates)
 
-        res_stock_dead = evaluate_deterministic_kd_state(k=15.0, d=22.0, is_bond=False, df=df_break)
-        self.assertEqual(res_stock_dead["label"], "【空方鈍化／禁止接刀】")
-        self.assertEqual(res_stock_dead["light"], "🔴 警戒")
-        self.assertIn("留意空方慣性破底", res_stock_dead["risk_warning"])
-
-    def test_priority4_mid_oscillation(self):
-        # 中軸偏多 (30 < K < 80, K > D)
-        res_mid_bull = evaluate_deterministic_kd_state(k=55.0, d=45.0, is_bond=False)
-        self.assertEqual(res_mid_bull["label"], "【偏多持股】")
-        self.assertEqual(res_mid_bull["light"], "🟢 偏多")
-
-        # 中軸偏空 (30 < K < 80, K < D)
-        res_mid_bear = evaluate_deterministic_kd_state(k=45.0, d=55.0, is_bond=False)
-        self.assertEqual(res_mid_bear["label"], "【持股觀望】")
-        self.assertEqual(res_mid_bear["light"], "⚪ 中立")
+        res_low = evaluate_deterministic_kd_state(k=15.0, d=22.0, is_bond=False, df=df_break)
+        self.assertEqual(res_low["label"], "【低檔觀望／嚴禁殺低】")
+        self.assertEqual(res_low["action_type"], "中立")
+        self.assertEqual(res_low["light"], "🟡 觀望")
+        self.assertIn("留意空方慣性破底", res_low["risk_warning"])
 
     def test_dual_track_system_integration(self):
-        # 測試 00720B 債券低檔金叉整合輸出
+        # 測試 00720B 債券低檔鎖利觀望整合輸出
         bond_data = {
             "symbol": "00720B.TWO",
             "name": "元大投資級公司債",
-            "k": 18.5,
-            "d": 12.0,
-            "latest_close": 32.5,
-            "change_pct": 0.5,
+            "k": 30.4,
+            "d": 47.5,
+            "latest_close": 30.85,
+            "change_pct": -0.16,
             "df": None
         }
         res_bond = evaluate_dual_track_system(bond_data)
-        self.assertEqual(res_bond["strategy_state"], "【低檔轉強／鎖利加碼】")
-        self.assertIn("【低檔轉強／鎖利加碼】", res_bond["integrated_reason"])
+        self.assertEqual(res_bond["strategy_state"], "【低檔鎖利／蓋牌領息觀望】")
+        self.assertEqual(res_bond["action_type"], "中立")
+        self.assertIn("【低檔鎖利／蓋牌領息觀望】", res_bond["integrated_reason"])
+
+        # 測試 0056 中高檔死叉持股觀望整合輸出
+        etf_0056 = {
+            "symbol": "0056.TW",
+            "name": "元大高股息",
+            "k": 66.4,
+            "d": 69.1,
+            "latest_close": 38.5,
+            "change_pct": -0.3,
+            "df": None
+        }
+        res_0056 = evaluate_dual_track_system(etf_0056)
+        self.assertEqual(res_0056["strategy_state"], "【持股觀望／停止加碼】")
+        self.assertEqual(res_0056["action_type"], "中立")
 
         # 測試弱勢個股低檔死叉整合輸出
         weak_stock = {
@@ -125,7 +157,8 @@ class TestDeterministicKD(unittest.TestCase):
             "df": None
         }
         res_stock = evaluate_dual_track_system(weak_stock)
-        self.assertEqual(res_stock["strategy_state"], "【空方鈍化／禁止接刀】")
+        self.assertEqual(res_stock["strategy_state"], "【低檔觀望／嚴禁殺低】")
+        self.assertEqual(res_stock["action_type"], "中立")
 
 if __name__ == "__main__":
     unittest.main()
