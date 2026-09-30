@@ -3,12 +3,13 @@ import https from 'https';
 const CACHE = { data: null, timestamp: 0 };
 const CACHE_TTL_MS = 60 * 1000;
 
-function fetchJson(url, headers = {}, timeoutMs = 3500) {
+function fetchJson(url, headers = {}, timeoutMs = 6000) {
   return new Promise((resolve, reject) => {
     const req = https.get(url, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'application/json',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+        'Accept': 'application/json, text/plain, */*',
+        'Accept-Language': 'zh-TW,zh;q=0.9,en;q=0.8',
         ...headers
       },
       timeout: timeoutMs
@@ -209,7 +210,8 @@ async function fetchMarketData() {
     });
   }
 
-  const recent10 = fullRecords.slice(-10).reverse();
+  const recent10Chronological = fullRecords.slice(-10);
+  const recent10Descending = [...recent10Chronological].reverse();
   const latest = fullRecords[fullRecords.length - 1];
 
   return {
@@ -227,7 +229,8 @@ async function fetchMarketData() {
       streak: latest.streak,
       streak_text: latest.streak_text
     },
-    records: recent10,
+    records: recent10Chronological,
+    table_records: recent10Descending,
     all_recent: fullRecords.slice(-30)
   };
 }
@@ -247,6 +250,8 @@ export default async function handler(req, res) {
   const now = Date.now();
   if (!forceRefresh && CACHE.data && (now - CACHE.timestamp) < CACHE_TTL_MS) {
     res.setHeader('Cache-Control', 'no-cache, no-store, max-age=0, must-revalidate');
+    res.setHeader('CDN-Cache-Control', 'no-store');
+    res.setHeader('Vercel-CDN-Cache-Control', 'no-store');
     res.setHeader('X-Cache', 'HIT');
     res.status(200).json(CACHE.data);
     return;
@@ -257,6 +262,8 @@ export default async function handler(req, res) {
     CACHE.data = data;
     CACHE.timestamp = now;
     res.setHeader('Cache-Control', 'no-cache, no-store, max-age=0, must-revalidate');
+    res.setHeader('CDN-Cache-Control', 'no-store');
+    res.setHeader('Vercel-CDN-Cache-Control', 'no-store');
     res.setHeader('X-Cache', 'MISS');
     res.status(200).json(data);
   } catch (err) {
