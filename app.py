@@ -75,7 +75,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-DEFAULT_STOCKS = "2330.TW, 2317.TW, 2454.TW, 2308.TW, 2881.TW, 2882.TW, 0050.TW, 0056.TW, 00878.TW, 00919.TW"
+DEFAULT_STOCKS = "00720B, 0056, 2330, 2317, 0050, 00878, 2454, 2881"
 
 def plot_stock_chart(df: pd.DataFrame, title: str) -> go.Figure:
     """Create a Plotly chart with Price/Candlestick and KD Indicators Subplot"""
@@ -142,6 +142,19 @@ def plot_stock_chart(df: pd.DataFrame, title: str) -> go.Figure:
 
 def plot_market_index_chart(df: pd.DataFrame) -> go.Figure:
     """Create compact Plotly chart for Taiwan Weighted Index (^TWII) with Close Points and KD Indicators"""
+    if df is None or df.empty:
+        fig = go.Figure()
+        fig.update_layout(
+            height=380,
+            annotations=[dict(
+                text="暫無大盤指數走勢數據",
+                xref="paper", yref="paper",
+                showarrow=False,
+                font=dict(size=14, color="gray")
+            )]
+        )
+        return fig
+
     fig = make_subplots(
         rows=2, cols=1,
         shared_xaxes=True,
@@ -214,42 +227,47 @@ if "refresh_counter" not in st.session_state:
     st.session_state["refresh_counter"] = 0
 
 # Sidebar Layout
-st.sidebar.title("📊 儀表板控制台")
+with st.sidebar:
+    st.title("📊 儀表板控制台")
 
-# Stock Input Box inside Form (pressing Enter inside text input natively triggers form submit)
-with st.sidebar.form(key="stock_search_form", clear_on_submit=False):
-    stock_input = st.text_area(
-        "【輸入查詢股號】",
-        value=st.session_state.get("last_stock_input", DEFAULT_STOCKS),
-        height=90,
-        help="請輸入台股代號（例如：2330.TW, 0050.TW），多檔以逗號分隔。在文字框按 Enter 或點擊下方按鈕即可查詢"
+    # Stock Input Box inside Form
+    with st.form(key="stock_search_form", clear_on_submit=False):
+        stock_input = st.text_area(
+            "【輸入查詢股號】",
+            value=st.session_state.get("last_stock_input", DEFAULT_STOCKS),
+            height=95,
+            help="請輸入台股代號（例如：00720B, 0056, 2330, 2317），多檔以逗號或空格分隔。輸入完成後按下方查詢按鈕即可。"
+        )
+        col_btn1, col_btn2 = st.columns([1, 1])
+        with col_btn1:
+            submit_btn = st.form_submit_button("🔍 立即查詢 (Enter)", use_container_width=True)
+        with col_btn2:
+            force_refresh_btn = st.form_submit_button("🔄 強制重抓", use_container_width=True)
+
+    # Gemini API Key Input
+    api_key = st.text_input(
+        "Gemini API Key (選填)",
+        type="password",
+        value=os.environ.get("GEMINI_API_KEY", ""),
+        help="輸入 Google Gemini API Key 以啟用 LLM 分析；若未填寫將自動採用智慧型啟發式規則引擎評估。"
     )
-    submit_btn = st.form_submit_button("🔍 查詢 / 同步最新即時行情 (Enter)", use_container_width=True)
 
-# Dedicated Force Refresh Button
-force_refresh_btn = st.sidebar.button("🔄 同步最新即時行情 (強制向外重抓)", use_container_width=True)
-
-# Gemini API Key Input
-api_key = st.sidebar.text_input(
-    "Gemini API Key (選填)",
-    type="password",
-    value=os.environ.get("GEMINI_API_KEY", ""),
-    help="輸入 Google Gemini API Key 以啟用 LLM 分析；若未填寫將自動採用智慧型啟發式規則引擎評估。"
-)
-
-# Attachment Uploader
-uploaded_file = st.sidebar.file_uploader(
-    "上傳策略或研報附件 (PDF / CSV / TXT)",
-    type=["pdf", "csv", "txt", "md"],
-    help="上傳後，AI 買賣評估將結合附件內容進行綜合分析。"
-)
+    # Attachment Uploader
+    uploaded_file = st.file_uploader(
+        "上傳策略或研報附件 (PDF / CSV / TXT)",
+        type=["pdf", "csv", "txt", "md"],
+        help="上傳後，AI 買賣評估將結合附件內容進行綜合分析。"
+    )
 
 # Detect if Enter / Submit / Force Refresh / Value Change occurred
 force_refresh = False
-if submit_btn or force_refresh_btn:
+if force_refresh_btn:
     force_refresh = True
-
-if stock_input != st.session_state.get("last_stock_input"):
+    st.session_state["last_stock_input"] = stock_input
+elif submit_btn:
+    st.session_state["last_stock_input"] = stock_input
+    force_refresh = True
+elif stock_input != st.session_state.get("last_stock_input"):
     force_refresh = True
     st.session_state["last_stock_input"] = stock_input
 
@@ -266,7 +284,8 @@ sync_time_str = datetime.fromtimestamp(current_rf_token).strftime("%H:%M:%S")
 attachment_text = ""
 if uploaded_file is not None:
     attachment_text = parse_uploaded_file(uploaded_file)
-    st.sidebar.success(f"已成功解析附件: {uploaded_file.name}")
+    with st.sidebar:
+        st.success(f"已成功解析附件: {uploaded_file.name}")
 
 # Main Header
 st.title("📈 台股Dashboard")
@@ -303,6 +322,9 @@ def load_all_stock_data(symbols_list, refresh_time=None):
                     data["news"] = news
                 except Exception:
                     data["news"] = []
+            else:
+                data.setdefault("valuation_info", {"display_text": "N/A", "label": "本益比", "value": None})
+                data.setdefault("news", [])
             results.append(data)
         except Exception as e:
             results.append({
@@ -310,7 +332,9 @@ def load_all_stock_data(symbols_list, refresh_time=None):
                 "raw_symbol": clean_sym,
                 "name": get_stock_name(clean_sym),
                 "success": False,
-                "error": f"抓取 {clean_sym} 發生例外: {str(e)}"
+                "error": f"抓取 {clean_sym} 發生例外: {str(e)}",
+                "valuation_info": {"display_text": "N/A", "label": "本益比", "value": None},
+                "news": []
             })
     return results
 
@@ -382,8 +406,8 @@ with m_col4:
 st.divider()
 
 # Market Index Display
-if market_data.get("success"):
-    with st.expander("📊 台股加權指數 (^TWII) 近 10 日技術與資金面一覽", expanded=True):
+with st.expander("📊 台股加權指數 (^TWII) 近 10 日技術與資金面一覽", expanded=True):
+    if market_data.get("success") and market_data.get("table_df") is not None and not market_data["table_df"].empty:
         m_tab_col, m_chart_col = st.columns([0.55, 0.45])
         with m_tab_col:
             st.markdown("##### 📋 近 10 個交易日明細紀錄")
@@ -394,9 +418,15 @@ if market_data.get("success"):
             )
         with m_chart_col:
             st.markdown("##### 📈 點位走勢與 9日 KD 雙線圖")
-            fig_market = plot_market_index_chart(market_data["df_raw"])
-            st.plotly_chart(fig_market, use_container_width=True)
-    st.divider()
+            df_twii = market_data.get("df_raw")
+            if df_twii is not None and not df_twii.empty:
+                fig_market = plot_market_index_chart(df_twii)
+                st.plotly_chart(fig_market, use_container_width=True)
+            else:
+                st.info("大盤走勢圖暫無資料")
+    else:
+        st.warning("加權指數目前處於盤後更新或外部連線延遲中，請點擊側邊欄【強制重抓】按鈕重新載入。")
+st.divider()
 
 # =====================================================================================
 # 二、獨立【🎯 Yahoo 官方全市場 KD 極端值快速選股看板】
@@ -520,13 +550,13 @@ st.subheader("📋 股票評估一覽表 (雙軌決策系統：KD 常規矩陣 +
 
 table_rows = []
 for item in analyzed_data:
-    sd = item["stock_data"]
-    ai = item["ai_result"]
+    sd = item.get("stock_data") or {}
+    ai = item.get("ai_result") or {}
     
     if not sd.get("success"):
         table_rows.append({
-            "股票代號": sd.get("symbol", sd.get("raw_symbol")),
-            "股票名稱": "未知",
+            "股票代號": sd.get("symbol") or sd.get("raw_symbol") or "N/A",
+            "股票名稱": sd.get("name") or "未知",
             "資料日期": "N/A",
             "現價": "N/A",
             "漲跌幅": "N/A",
@@ -538,7 +568,7 @@ for item in analyzed_data:
             "折溢價比/估值": "N/A",
             "成交量 (張)": "0 張",
             "AI評級": "未知",
-            "綜合權衡理由": sd.get("error", "失敗")
+            "綜合權衡理由": sd.get("error", "外部端點連線失敗")
         })
         continue
         
@@ -577,9 +607,12 @@ for item in analyzed_data:
     else:
         state_badge = f"⚪ {raw_state}"
 
+    val_info = sd.get("valuation_info") or {}
+    val_display = val_info.get("display_text", "N/A")
+
     table_rows.append({
-        "股票代號": sd["symbol"],
-        "股票名稱": sd["name"],
+        "股票代號": sd.get("symbol", "N/A"),
+        "股票名稱": sd.get("name", "未知"),
         "資料日期": sd.get("latest_date", "N/A"),
         "現價": close_str,
         "漲跌幅": change_str,
@@ -588,36 +621,39 @@ for item in analyzed_data:
         "數據校驗": validation_badge,
         "KD策略建議狀態": state_badge,
         "風控與連跌策略": ai.get("risk_control", "設移動停利"),
-        "折溢價比/估值": sd["valuation_info"]["display_text"],
+        "折溢價比/估值": val_display,
         "成交量 (張)": sd.get("volume_display", "0 張"),
         "AI評級": rating_badge,
         "綜合權衡理由": ai.get("reason", "")
     })
 
-df_table = pd.DataFrame(table_rows)
+if table_rows:
+    df_table = pd.DataFrame(table_rows)
 
-# Render Styled Streamlit Dataframe
-st.dataframe(
-    df_table,
-    use_container_width=True,
-    column_config={
-        "股票代號": st.column_config.TextColumn("股票代號", width="small"),
-        "股票名稱": st.column_config.TextColumn("股票名稱", width="small"),
-        "資料日期": st.column_config.TextColumn("資料日期", width="small"),
-        "現價": st.column_config.TextColumn("現價", width="small"),
-        "漲跌幅": st.column_config.TextColumn("漲跌幅", width="small"),
-        "9K": st.column_config.TextColumn("9K", width="small"),
-        "9D": st.column_config.TextColumn("9D", width="small"),
-        "數據校驗": st.column_config.TextColumn("數據校驗", width="medium"),
-        "KD策略建議狀態": st.column_config.TextColumn("KD策略建議狀態 (軌道一)", width="medium"),
-        "風控與連跌策略": st.column_config.TextColumn("風控與連跌策略 (軌道二)", width="large"),
-        "折溢價比/估值": st.column_config.TextColumn("折溢價比/估值", width="medium"),
-        "成交量 (張)": st.column_config.TextColumn("成交量 (張)", width="medium"),
-        "AI評級": st.column_config.TextColumn("AI評級", width="small"),
-        "綜合權衡理由": st.column_config.TextColumn("綜合權衡理由", width="large"),
-    },
-    hide_index=True
-)
+    # Render Styled Streamlit Dataframe
+    st.dataframe(
+        df_table,
+        use_container_width=True,
+        column_config={
+            "股票代號": st.column_config.TextColumn("股票代號", width="small"),
+            "股票名稱": st.column_config.TextColumn("股票名稱", width="small"),
+            "資料日期": st.column_config.TextColumn("資料日期", width="small"),
+            "現價": st.column_config.TextColumn("現價", width="small"),
+            "漲跌幅": st.column_config.TextColumn("漲跌幅", width="small"),
+            "9K": st.column_config.TextColumn("9K", width="small"),
+            "9D": st.column_config.TextColumn("9D", width="small"),
+            "數據校驗": st.column_config.TextColumn("數據校驗", width="medium"),
+            "KD策略建議狀態": st.column_config.TextColumn("KD策略建議狀態 (軌道一)", width="medium"),
+            "風控與連跌策略": st.column_config.TextColumn("風控與連跌策略 (軌道二)", width="large"),
+            "折溢價比/估值": st.column_config.TextColumn("折溢價比/估值", width="medium"),
+            "成交量 (張)": st.column_config.TextColumn("成交量 (張)", width="medium"),
+            "AI評級": st.column_config.TextColumn("AI評級", width="small"),
+            "綜合權衡理由": st.column_config.TextColumn("綜合權衡理由", width="large"),
+        },
+        hide_index=True
+    )
+else:
+    st.info("💡 暫無符合條件之股票評估資料，請在左側側邊欄輸入股號後點擊查詢。")
 
 st.divider()
 
@@ -625,8 +661,8 @@ st.divider()
 st.subheader("🔍 各個股 / ETF 歷史圖表與新聞詳情")
 
 for item in analyzed_data:
-    sd = item["stock_data"]
-    ai = item["ai_result"]
+    sd = item.get("stock_data") or {}
+    ai = item.get("ai_result") or {}
     
     if not sd.get("success"):
         with st.expander(f"⚠️ {sd.get('raw_symbol')} - 資料抓取失敗"):
