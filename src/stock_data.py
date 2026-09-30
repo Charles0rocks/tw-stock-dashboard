@@ -53,7 +53,10 @@ def format_symbol(symbol: str) -> str:
     """Ensure stock symbol has .TW or .TWO suffix if needed"""
     symbol = symbol.strip().upper()
     if not (symbol.endswith(".TW") or symbol.endswith(".TWO")):
-        symbol = f"{symbol}.TW"
+        if symbol.endswith("B"):
+            symbol = f"{symbol}.TWO"
+        else:
+            symbol = f"{symbol}.TW"
     return symbol
 
 def get_stock_name(symbol: str, default_info_name: str = "") -> str:
@@ -752,44 +755,43 @@ def _fetch_stock_data_impl(sym: str, period: str = "1mo", refresh_time: float = 
         "info": info
     }
 
+HARDCODED_MARKET_FALLBACK_RECORDS = [
+    {"date": "2026-09-15", "close": 45511.49, "change": -351.03, "change_pct": -0.77, "k": 26.2, "d": 38.9, "turnover_yi": 3225.5, "streak": "連跌 4 天"},
+    {"date": "2026-09-16", "close": 45848.90, "change": 337.41, "change_pct": 0.74, "k": 24.4, "d": 34.1, "turnover_yi": 3326.7, "streak": "連漲 1 天"},
+    {"date": "2026-09-17", "close": 46288.00, "change": 439.10, "change_pct": 0.96, "k": 29.8, "d": 32.7, "turnover_yi": 4395.1, "streak": "連漲 2 天"},
+    {"date": "2026-09-18", "close": 47180.75, "change": 892.75, "change_pct": 1.93, "k": 47.1, "d": 37.5, "turnover_yi": 5651.2, "streak": "連漲 3 天"},
+    {"date": "2026-09-21", "close": 47718.84, "change": 538.09, "change_pct": 1.14, "k": 64.3, "d": 46.4, "turnover_yi": 4475.5, "streak": "連漲 4 天"},
+    {"date": "2026-09-22", "close": 47800.17, "change": 81.33, "change_pct": 0.17, "k": 67.9, "d": 53.6, "turnover_yi": 5924.9, "streak": "連漲 5 天"},
+    {"date": "2026-09-23", "close": 48157.29, "change": 357.12, "change_pct": 0.75, "k": 74.0, "d": 60.4, "turnover_yi": 4866.3, "streak": "連漲 6 天"},
+    {"date": "2026-09-24", "close": 48024.60, "change": -132.69, "change_pct": -0.28, "k": 76.6, "d": 65.8, "turnover_yi": 3540.9, "streak": "連跌 1 天"},
+    {"date": "2026-09-29", "close": 47631.96, "change": -392.64, "change_pct": -0.82, "k": 74.0, "d": 68.5, "turnover_yi": 3781.3, "streak": "連跌 2 天"},
+    {"date": "2026-09-30", "close": 47940.13, "change": 308.17, "change_pct": 0.65, "k": 75.5, "d": 70.8, "turnover_yi": 8774.7, "streak": "連漲 1 天"}
+]
+
 def get_market_index_fallback() -> dict:
     """
     加權指數備用 fallback 數據生成器：
-    優先自本地 dashboard_full_data.json 載入最近 10 日真實盤面行情；
-    若檔案不可讀，則以內建最近 10 日歷史數據生成標準資料結構，絕不回傳空資料或引發頁面中斷。
+    保證輸出非空 DataFrame，包含標準 8 個欄位：
+    ['日期', '加權指數', '漲跌點數', '漲跌幅 (%)', '大盤 9K', '大盤 9D', '成交金額 (億)', '連漲/連跌天數']
     """
+    records = list(HARDCODED_MARKET_FALLBACK_RECORDS)
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     json_paths = [
         os.path.join(base_dir, "dashboard_full_data.json"),
         os.path.join(base_dir, "public", "dashboard_full_data.json"),
         "dashboard_full_data.json"
     ]
-    records = []
     for jp in json_paths:
         if os.path.exists(jp):
             try:
                 with open(jp, "r", encoding="utf-8") as f:
                     data = json.load(f)
                     m_idx = data.get("market_index", {})
-                    if m_idx and m_idx.get("records"):
-                        records = m_idx.get("records", [])
+                    if m_idx and m_idx.get("records") and len(m_idx["records"]) >= 5:
+                        records = m_idx.get("records")
                         break
             except Exception:
                 pass
-
-    if not records:
-        records = [
-            {"date": "2026-09-15", "close": 45511.49, "change": -351.03, "change_pct": -0.77, "k": 26.2, "d": 38.9, "turnover_yi": 3225.5, "streak": "連跌 4 天"},
-            {"date": "2026-09-16", "close": 45848.9, "change": 337.41, "change_pct": 0.74, "k": 24.4, "d": 34.1, "turnover_yi": 3326.7, "streak": "連漲 1 天"},
-            {"date": "2026-09-17", "close": 46288.0, "change": 439.1, "change_pct": 0.96, "k": 29.8, "d": 32.7, "turnover_yi": 4395.1, "streak": "連漲 2 天"},
-            {"date": "2026-09-18", "close": 47180.75, "change": 892.75, "change_pct": 1.93, "k": 47.1, "d": 37.5, "turnover_yi": 5651.2, "streak": "連漲 3 天"},
-            {"date": "2026-09-21", "close": 47718.84, "change": 538.09, "change_pct": 1.14, "k": 64.3, "d": 46.4, "turnover_yi": 4475.5, "streak": "連漲 4 天"},
-            {"date": "2026-09-22", "close": 47800.17, "change": 81.33, "change_pct": 0.17, "k": 67.9, "d": 53.6, "turnover_yi": 5924.9, "streak": "連漲 5 天"},
-            {"date": "2026-09-23", "close": 48157.29, "change": 357.12, "change_pct": 0.75, "k": 74.0, "d": 60.4, "turnover_yi": 4866.3, "streak": "連漲 6 天"},
-            {"date": "2026-09-24", "close": 48024.6, "change": -132.69, "change_pct": -0.28, "k": 76.6, "d": 65.8, "turnover_yi": 3540.9, "streak": "連跌 1 天"},
-            {"date": "2026-09-29", "close": 47631.96, "change": -392.64, "change_pct": -0.82, "k": 74.0, "d": 68.5, "turnover_yi": 3781.3, "streak": "連跌 2 天"},
-            {"date": "2026-09-30", "close": 47940.13, "change": 308.17, "change_pct": 0.65, "k": 75.5, "d": 70.8, "turnover_yi": 8774.7, "streak": "連漲 1 天"}
-        ]
 
     last10_recs = records[-10:] if len(records) >= 10 else records
     df_raw = pd.DataFrame(last10_recs)
@@ -833,7 +835,19 @@ def fetch_market_index_data(symbol: str = "^TWII", refresh_time: float = None) -
     [日期] | [加權指數] | [漲跌點數] | [漲跌幅 (%)] | [大盤 9K] | [大盤 9D] | [成交金額 (億)] | [連漲/連跌天數]
     """
     try:
-        return _fetch_market_index_data_impl(symbol=symbol, refresh_time=refresh_time)
+        res = _fetch_market_index_data_impl(symbol=symbol, refresh_time=refresh_time)
+        if (
+            not res
+            or not isinstance(res, dict)
+            or not res.get("success")
+            or res.get("table_df") is None
+            or getattr(res["table_df"], "empty", True)
+            or len(res["table_df"]) < 5
+            or res.get("df_raw") is None
+            or getattr(res["df_raw"], "empty", True)
+        ):
+            return get_market_index_fallback()
+        return res
     except Exception:
         return get_market_index_fallback()
 
