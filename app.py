@@ -440,6 +440,16 @@ for item in analyzed_data:
     k_str = f"{k_val:.2f}" if (k_val is not None and round(k_val, 1) != round(k_val, 2)) else (f"{k_val:.1f}" if k_val is not None else "N/A")
     d_str = f"{d_val:.2f}" if (d_val is not None and round(d_val, 1) != round(d_val, 2)) else (f"{d_val:.1f}" if d_val is not None else "N/A")
 
+    raw_state = ai.get("strategy_state", "【持股觀望】")
+    if "鎖利加碼" in raw_state or "分批加碼" in raw_state or "偏多持股" in raw_state or "續抱" in raw_state:
+        state_badge = f"🟢 {raw_state}"
+    elif "領息觀望" in raw_state:
+        state_badge = f"🟡 {raw_state}"
+    elif "禁止接刀" in raw_state or "獲利了結" in raw_state or "減碼" in raw_state:
+        state_badge = f"🔴 {raw_state}"
+    else:
+        state_badge = f"⚪ {raw_state}"
+
     table_rows.append({
         "股票代號": sd["symbol"],
         "股票名稱": sd["name"],
@@ -449,7 +459,7 @@ for item in analyzed_data:
         "9K": k_str,
         "9D": d_str,
         "數據校驗": validation_badge,
-        "KD策略建議狀態": ai.get("strategy_state", "【觀望】"),
+        "KD策略建議狀態": state_badge,
         "風控與連跌策略": ai.get("risk_control", "設移動停利"),
         "折溢價比/估值": sd["valuation_info"]["display_text"],
         "成交量 (張)": sd.get("volume_display", "0 張"),
@@ -498,10 +508,21 @@ for item in analyzed_data:
         
     rating = ai.get("rating", "中立")
     rating_icon = "🟢" if rating == "買進" else ("🔴" if rating == "賣出" else "🟡")
-    strategy_state = ai.get("strategy_state", "【觀望】")
+    strategy_state = ai.get("strategy_state", "【持股觀望】")
     risk_text = ai.get("risk_control", "設移動停利")
     
-    expander_title = f"{rating_icon} 【{sd['symbol']}】{sd['name']} | 現價: ${sd['latest_close']:.2f} ({sd['change_pct']:+.2f}%) | KD: {strategy_state} | 風控: {risk_text} | AI評級: {rating}"
+    card_state_badge = strategy_state
+    if not any(strategy_state.startswith(icon) for icon in ["🟢", "🟡", "🔴", "⚪"]):
+        if "鎖利加碼" in strategy_state or "分批加碼" in strategy_state or "偏多持股" in strategy_state or "續抱" in strategy_state:
+            card_state_badge = f"🟢 {strategy_state}"
+        elif "領息觀望" in strategy_state:
+            card_state_badge = f"🟡 {strategy_state}"
+        elif "禁止接刀" in strategy_state or "獲利了結" in strategy_state or "減碼" in strategy_state:
+            card_state_badge = f"🔴 {strategy_state}"
+        else:
+            card_state_badge = f"⚪ {strategy_state}"
+    
+    expander_title = f"{rating_icon} 【{sd['symbol']}】{sd['name']} | 現價: ${sd['latest_close']:.2f} ({sd['change_pct']:+.2f}%) | KD: {card_state_badge} | 風控: {risk_text} | AI評級: {rating}"
     
     with st.expander(expander_title, expanded=False):
         c1, c2 = st.columns([0.55, 0.45])
@@ -513,7 +534,14 @@ for item in analyzed_data:
             
         with c2:
             st.markdown("##### 🤖 雙軌決策系統與 AI 綜合研判")
-            st.warning(f"**🎯 軌道一：KD 策略建議狀態**: {strategy_state}  \n**🛡️ 軌道二：風控與連跌策略**: {risk_text}")
+            st.warning(f"**🎯 軌道一：KD 策略建議狀態**: {card_state_badge}  \n**🛡️ 軌道二：風控與連跌策略**: {risk_text}")
+            
+            # 若觸發【空方鈍化／禁止接刀】，明確提示停損點與防破底風控
+            if "禁止接刀" in strategy_state:
+                st.error("🚨 **【空方鈍化／禁止接刀】風控警戒**：指標處於低檔鈍化，空方主導嚴禁盲目攤平，跌破前低仍須紀律停損。  \n⚠️ **防破底風控**：留意空方慣性破底，未見長下影線或爆量前切勿進場！")
+            elif "鎖利加碼" in strategy_state:
+                st.success("💎 **【低檔轉強／鎖利加碼】固定收益優勢**：債券跌深出現低檔黃金交叉，兼具高殖利率鎖利與反彈資本利得空間，啟動分批加碼。")
+                
             st.info(f"**🤖 AI 評估結論**: {rating} ({ai.get('confidence')}信心) | **評估引擎**: {ai.get('engine')}")
             st.write(f"**💡 綜合權衡理由**: {ai.get('reason')}")
             

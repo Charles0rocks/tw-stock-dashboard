@@ -112,61 +112,155 @@ function calculateTaiwanKD(highs, lows, closes, period = 9) {
   return { k: kArr[kArr.length - 1], d: dArr[dArr.length - 1], kArr, dArr };
 }
 
-function evaluateKdStrategy(k, d) {
-  if (k >= 40.0 && k <= 60.0 && Math.abs(k - d) <= 5.0) {
-    return {
-      strategy_state: '【中性盤整 / 觀望】',
-      risk_control: '建議中性觀望多看少做，靜待帶量突破或走出清晰發散方向',
-      rating: '中立',
-      reason: '核心KD矩陣：符合 KD 50 軸附近橫盤黏合 -> 【中性盤整 / 觀望】'
-    };
-  }
-  if (k > d) {
-    if (k < 20) {
+function checkIsBond(symbol = '', name = '') {
+  const sym = (symbol || '').trim().toUpperCase();
+  const baseSym = sym.replace(/\.(TW|TWO)$/, '');
+  if (baseSym.endsWith('B')) return true;
+  const nm = (name || '').trim();
+  const bondKeywords = ['債', '美債', '公司債', '金融債', '公債', '國債', '投等債', '短期債', '長期債'];
+  return bondKeywords.some(kw => nm.includes(kw));
+}
+
+function checkBottomBreakRisk(history) {
+  if (!history || history.length < 5) return { has_risk: false, reasons: [], warning_msg: '' };
+  const reasons = [];
+  try {
+    const n = history.length;
+    const latest = history[n - 1];
+    const prev = history[n - 2];
+    const c = latest.close;
+    const o = latest.open ?? c;
+    const h = latest.high ?? c;
+    const l = latest.low ?? c;
+    const v = latest.volume ?? 0;
+
+    const isBearish = (c < o) || (c < prev.close);
+    const amplitude = h - l;
+    if (isBearish && amplitude > 0) {
+      const lowerShadowRatio = (c - l) / amplitude;
+      if (lowerShadowRatio <= 0.08 || c === l) {
+        reasons.push('光腳黑棒收最低');
+      }
+    }
+
+    const recentCloses = history.slice(-10).map(x => x.close);
+    if (recentCloses.length >= 5) {
+      const minClose = Math.min(...recentCloses.slice(0, -1));
+      if (c <= minClose) {
+        const volMa5 = history.slice(-6, -1).reduce((acc, x) => acc + (x.volume || 0), 0) / 5;
+        if (volMa5 > 0 && v < volMa5) {
+          reasons.push('無量陰跌破底');
+        }
+      }
+    }
+  } catch (e) {}
+
+  const hasRisk = reasons.length > 0;
+  return {
+    has_risk: hasRisk,
+    reasons: reasons,
+    warning_msg: hasRisk ? '⚠️ 留意空方慣性破底，未見長下影線或爆量前切勿進場' : ''
+  };
+}
+
+function evaluateKdStrategy(k, d, isBond = false, history = null) {
+  k = Number(k);
+  d = Number(d);
+
+  // 1. 第一優先：債券標的低檔分流 (is_bond == True 且 K <= 30)
+  if (isBond && k <= 30.0) {
+    if (k > d) {
       return {
-        strategy_state: '【買進】分批建倉',
-        risk_control: '設近9日低點為停損點，防無底跌勢續摔',
+        strategy_state: '【低檔轉強／鎖利加碼】',
+        badge: '🟢 【低檔轉強／鎖利加碼】',
+        light: '🟢 加碼',
         rating: '買進',
-        reason: '核心KD矩陣：符合 K > D 且 K < 20 -> 【買進】分批建倉'
-      };
-    } else if (k <= 80) {
-      return {
-        strategy_state: '【續抱 / 加碼買進】',
-        risk_control: '設移動停利（如退回10日線跌破，或 K < D 死叉出場）',
-        rating: '買進',
-        reason: '核心KD矩陣：符合 K > D 且 20 ≤ K ≤ 80 -> 【續抱 / 加碼買進】'
+        risk_control: '鎖利加碼部位，防範降息路徑反覆，以分批佈局領息為主',
+        reason: '核心KD狀態機：符合 債券低檔金叉 (is_bond 且 K <= 30, K > D) -> 【低檔轉強／鎖利加碼】'
       };
     } else {
+      return {
+        strategy_state: '【低檔鎖利／領息觀望】',
+        badge: '🟡 【低檔鎖利／領息觀望】',
+        light: '🟡 觀望',
+        rating: '中立',
+        risk_control: '現有部位安心領息，不盲目殺低，靜待KD由下往上金叉轉折',
+        reason: '核心KD狀態機：符合 債券低檔鈍化 (is_bond 且 K <= 30, K <= D) -> 【低檔鎖利／領息觀望】'
+      };
+    }
+  }
+
+  // 2. 第二優先：高檔超買區 (K >= 80)
+  if (k >= 80.0) {
+    if (k > d) {
       return {
         strategy_state: '【續抱不追高】',
-        risk_control: '設高檔移動停利，K < D 死叉即刻部分獲利了結',
-        rating: '中立',
-        reason: '核心KD矩陣：符合 K > D 且 K > 80 -> 【續抱不追高】'
-      };
-    }
-  } else {
-    if (k > 80) {
-      return {
-        strategy_state: '【賣出】獲利了結',
-        risk_control: '即刻分批停利獲利了結，防大幅修正',
-        rating: '賣出',
-        reason: '核心KD矩陣：符合 K < D 且 K > 80 -> 【賣出】獲利了結'
-      };
-    } else if (k >= 20) {
-      return {
-        strategy_state: '【觀望 / 減碼賣出】',
-        risk_control: '跌破重要均線/支撐線即刻停損，觀望為主',
-        rating: '中立',
-        reason: '核心KD矩陣：符合 K < D 且 20 ≤ K ≤ 80 -> 【觀望 / 減碼賣出】'
+        badge: '🟢 【續抱不追高】',
+        light: '🟢 續抱',
+        rating: '續抱',
+        risk_control: '設高檔移動停利點，嚴禁追高，若跌破5日線或死叉即刻獲利了結',
+        reason: '核心KD狀態機：符合 高檔超買鈍化 (K >= 80 且 K > D) -> 【續抱不追高】'
       };
     } else {
       return {
-        strategy_state: '【超賣區 / 尋求築底】',
-        risk_control: '超賣區觀察築底，靜待 K > D 黃金交叉出現轉折訊號',
-        rating: '中立',
-        reason: '核心KD矩陣：符合 K < D 且 K < 20 -> 【超賣區 / 尋求築底】'
+        strategy_state: '【高檔減碼／獲利了結】',
+        badge: '🔴 【高檔減碼／獲利了結】',
+        light: '🔴 減碼',
+        rating: '賣出',
+        risk_control: '即刻分批停利獲利了結，防動能竭盡後之大幅拉回修正',
+        reason: '核心KD狀態機：符合 高檔超買死叉 (K >= 80 且 K <= D) -> 【高檔減碼／獲利了結】'
       };
     }
+  }
+
+  // 3. 第三優先：一般股票之低檔超賣區 (is_bond == False 且 K <= 30)
+  if (!isBond && k <= 30.0) {
+    if (k > d) {
+      return {
+        strategy_state: '【低檔轉強／分批加碼】',
+        badge: '🟢 【低檔轉強／分批加碼】',
+        light: '🟢 加碼',
+        rating: '買進',
+        risk_control: '設近9日最低點為紀律停損點，防無底跌勢續摔',
+        reason: '核心KD狀態機：符合 股票低檔超賣金叉 (K <= 30 且 K > D) -> 【低檔轉強／分批加碼】'
+      };
+    } else {
+      const bottomRisk = checkBottomBreakRisk(history);
+      const riskWarning = bottomRisk.warning_msg;
+      const riskCtrl = bottomRisk.has_risk
+        ? `空方極弱勢鈍化；${riskWarning}，嚴格執行紀律停損`
+        : '空方主導嚴禁盲目攤平接刀，跌破前低支撐務必嚴格執行停損';
+      return {
+        strategy_state: '【空方鈍化／禁止接刀】',
+        badge: '🔴 【空方鈍化／禁止接刀】',
+        light: '🔴 警戒',
+        rating: '賣出',
+        risk_control: riskCtrl,
+        risk_warning: riskWarning,
+        reason: `核心KD狀態機：符合 股票低檔超賣死叉 (K <= 30 且 K <= D) -> 【空方鈍化／禁止接刀】${riskWarning ? '；' + riskWarning : ''}`
+      };
+    }
+  }
+
+  // 4. 第四優先：中軸震盪區 (30 < K < 80)
+  if (k > d) {
+    return {
+      strategy_state: '【偏多持股】',
+      badge: '🟢 【偏多持股】',
+      light: '🟢 偏多',
+      rating: '買進',
+      risk_control: '設常規移動停利（如10日均線或KD死叉），部位順勢續抱',
+      reason: '核心KD狀態機：符合 中軸偏多 (30 < K < 80 且 K > D) -> 【偏多持股】'
+    };
+  } else {
+    return {
+      strategy_state: '【持股觀望】',
+      badge: '⚪ 【持股觀望】',
+      light: '⚪ 中立',
+      rating: '中立',
+      risk_control: '中立整理區間多看少做，停止追加部位，靜待量能表態或金叉',
+      reason: '核心KD狀態機：符合 中軸中立整理 (30 < K < 80 且 K <= D) -> 【持股觀望】'
+    };
   }
 }
 
@@ -439,7 +533,8 @@ async function fetchFromYahooWithSuffixFallback(rawCode) {
         });
       }
 
-      const strategy = evaluateKdStrategy(finalK, finalD);
+      const isBond = checkIsBond(sym, stockName);
+      const strategy = evaluateKdStrategy(finalK, finalD, isBond, history);
       const track2 = evaluateTrack2Risk(history, finalK, finalD, changePct);
 
       let finalRating = strategy.rating;
@@ -448,6 +543,9 @@ async function fetchFromYahooWithSuffixFallback(rawCode) {
       }
 
       let integratedReason = `【軌道一 KD】${strategy.strategy_state} (9K=${finalK.toFixed(1)}, 9D=${finalD.toFixed(1)})；`;
+      if (strategy.risk_warning) {
+        integratedReason += `【破底風控】${strategy.risk_warning}；`;
+      }
       if (track2.drop_streak === 0) {
         integratedReason += '【軌道二 風控】連跌0日，設常規移動停利，不干擾KD常態訊號';
       } else if (track2.drop_streak === 2) {

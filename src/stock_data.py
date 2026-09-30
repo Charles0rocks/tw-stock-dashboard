@@ -214,95 +214,41 @@ def calc_taiwan_kd_standard(df: pd.DataFrame, n: int = 9) -> pd.DataFrame:
 calc_taiwan_kd = calc_taiwan_kd_standard
 calculate_kd = calc_taiwan_kd_standard
 
-def evaluate_kd_strategy_rule(k: float, d: float) -> dict:
+def evaluate_kd_strategy_rule(
+    k: float,
+    d: float,
+    symbol: str = "",
+    name: str = "",
+    df: pd.DataFrame = None,
+    is_bond: bool = None
+) -> dict:
     """
-    Core KD Strategy Rule Matrix:
-    0. 50 軸附近橫盤黏合: 【中性盤整 / 觀望】（多空力道均衡，無明確方向，防盲目死叉誤判）
-    1. K > D 且 K < 20: 【買進】分批建倉（超賣轉折；若折價 > 0.5% 佳，溢價 < 0.3%）
-    2. K > D 且 20 <= K <= 80: 【續抱 / 加碼買進】（常態多頭；溢價 < 0.5% 為佳，溢價 > 1% 暫停加碼）
-    3. K > D 且 K > 80: 【續抱不追高】（高檔強勢；常伴隨溢價 > 1%，禁止追買）
-    4. K < D 且 K > 80: 【賣出】獲利了結（超買轉折高檔死叉；大幅溢價 > 1% 時加速出場）
-    5. K < D 且 20 <= K <= 80: 【觀望 / 減碼賣出】（常態空頭；不以折價逆勢搶進）
-    6. K < D 且 K < 20: 【超賣區 / 尋求築底】（極低檔超賣尋求築底；恐慌拋售未收斂，嚴禁盲目猜底）
+    調用確定性 KD 決策狀態機：
+    - 第一優先：債券標的低檔分流 (is_bond == True 且 K <= 30)
+    - 第二優先：高檔超買區 (K >= 80)
+    - 第三優先：一般股票之低檔超賣區 (is_bond == False 且 K <= 30)
+    - 第四優先：中軸震盪區 (30 < K < 80)
     """
-    # 50 軸附近橫盤黏合/糾結判定 (中性盤整 / 觀望)
-    # 當 K、D 處於 40~60 區間（50軸中軸附近）且兩線差距小 (abs(k - d) <= 5.0)，判斷為橫盤整理鈍化，避免誤判為低檔死叉或空頭減碼
-    if 40.0 <= k <= 60.0 and abs(k - d) <= 5.0:
-        return {
-            "rule_name": "KD 50 軸附近橫盤黏合",
-            "recommendation": "中性盤整/觀望",
-            "label": "【中性盤整 / 觀望】",
-            "badge": "⚪ 中性盤整/觀望",
-            "strategy_desc": "KD 雙線處於 50 軸附近的橫盤盲目黏合，多空力道均衡，無明確方向。",
-            "risk_control": "建議中性觀望多看少做，靜待帶量突破或走出清晰發散方向",
-            "etf_advice": "雙線於 50 中軸附近盲目糾結，防將盤整鈍化微幅死叉誤判為低檔空頭"
-        }
+    from src.strategy_engine import evaluate_deterministic_kd_state, check_is_bond
+    if is_bond is None:
+        is_bond = check_is_bond(symbol, name)
+    res = evaluate_deterministic_kd_state(
+        k=k, d=d, is_bond=is_bond, df=df
+    )
+    res["etf_advice"] = res.get("strategy_desc", "")
+    return res
 
-    if k > d:
-        if k < 20:
-            return {
-                "rule_name": "K > D 且 K < 20",
-                "recommendation": "買進",
-                "label": "【買進】分批建倉",
-                "badge": "🟢 買進 (分批建倉)",
-                "strategy_desc": "超賣轉折分批建倉（若 ETF 折價 > 0.5% 佳，溢價 < 0.3%）。",
-                "risk_control": "設近9日低點為停損點，防無底跌勢續摔",
-                "etf_advice": "若折價 > 0.5% 最佳，溢價需 < 0.3%"
-            }
-        elif k <= 80:
-            return {
-                "rule_name": "K > D 且 20 ≤ K ≤ 80",
-                "recommendation": "續抱 / 加碼買進",
-                "label": "【續抱 / 加碼買進】",
-                "badge": "🟢 續抱/加碼買進",
-                "strategy_desc": "常態多頭格局（溢價 < 0.5% 為佳，溢價 > 1% 暫停加碼）。",
-                "risk_control": "設移動停利（如退回10日線跌破，或 K < D 死叉出場）",
-                "etf_advice": "溢價 < 0.5% 為佳，若溢價 > 1% 應暫停加碼"
-            }
-        else: # k > 80
-            return {
-                "rule_name": "K > D 且 K > 80",
-                "recommendation": "續抱不追高",
-                "label": "【續抱不追高】",
-                "badge": "🟡 續抱不追高",
-                "strategy_desc": "高檔強勢格局（常伴隨溢價 > 1%，禁止追買）。",
-                "risk_control": "設高檔移動停利，K < D 死叉即刻部分獲利了結",
-                "etf_advice": "常伴隨溢價 > 1%，禁止盲目追高"
-            }
-    else: # k <= d
-        if k > 80:
-            return {
-                "rule_name": "K < D 且 K > 80",
-                "recommendation": "賣出",
-                "label": "【賣出】獲利了結",
-                "badge": "🔴 賣出 (獲利了結)",
-                "strategy_desc": "超買轉折高檔死叉（大幅溢價 > 1% 時加速出場）。",
-                "risk_control": "即刻分批停利獲利了結，防大幅修正",
-                "etf_advice": "大幅溢價 > 1% 時應加速落袋出場"
-            }
-        elif k >= 20:
-            return {
-                "rule_name": "K < D 且 20 ≤ K ≤ 80",
-                "recommendation": "觀望 / 減碼賣出",
-                "label": "【觀望 / 減碼賣出】",
-                "badge": "🟠 觀望/減碼賣出",
-                "strategy_desc": "常態空頭整理（不以折價逆勢搶進）。",
-                "risk_control": "跌破重要均線/支撐線即刻停損，觀望為主",
-                "etf_advice": "勿因折價而逆勢搶進搶反彈"
-            }
-        else: # k < 20
-            return {
-                "rule_name": "K < D 且 K < 20 (超賣區尋求築底)",
-                "recommendation": "超賣區/尋求築底",
-                "label": "【超賣區 / 尋求築底】",
-                "badge": "💡 超賣區/尋求築底",
-                "strategy_desc": "KD 雙線處於 20 以下極低檔超賣區，尋求築底轉折（恐慌拋售未收斂，嚴禁盲目猜底）。",
-                "risk_control": "超賣區觀察築底，靜待 K > D 黃金交叉出現轉折訊號",
-                "etf_advice": "超賣區尋求築底，恐慌拋售未收斂前嚴禁盲目猜底"
-            }
-
-def get_kd_signal(k: float, d: float, prev_k: float, prev_d: float) -> dict:
-    """Analyze KD status and signals"""
+def get_kd_signal(
+    k: float,
+    d: float,
+    prev_k: float,
+    prev_d: float,
+    symbol: str = "",
+    name: str = "",
+    df: pd.DataFrame = None,
+    is_bond: bool = None
+) -> dict:
+    """Analyze KD status and signals using deterministic KD state machine"""
     signals = []
     
     # Golden cross or Death cross
@@ -317,18 +263,20 @@ def get_kd_signal(k: float, d: float, prev_k: float, prev_d: float) -> dict:
         
     # Overbought / Oversold
     if k >= 80:
-        signals.append("超買區(>80) ⚠️")
-    elif k <= 20:
-        signals.append("超賣區(<20) 💡")
+        signals.append("超買區(>=80) ⚠️")
+    elif k <= 30:
+        signals.append("低檔區(<=30) 💡")
         
-    rule_info = evaluate_kd_strategy_rule(k, d)
+    rule_info = evaluate_kd_strategy_rule(
+        k, d, symbol=symbol, name=name, df=df, is_bond=is_bond
+    )
     
     return {
         "status_text": " | ".join(signals),
         "is_golden_cross": (prev_k <= prev_d and k > d),
         "is_death_cross": (prev_k >= prev_d and k < d),
         "is_overbought": k >= 80,
-        "is_oversold": k <= 20,
+        "is_oversold": k <= 30,
         "rule_info": rule_info
     }
 
@@ -500,9 +448,6 @@ def get_verified_stock_metrics(symbol: str, period: str = "3y") -> dict:
     change_val = round(latest_close - prev_close, 2)
     change_pct = round((change_val / prev_close * 100.0), 2) if prev_close > 0 else 0.0
     
-    signal_info = get_kd_signal(final_k, final_d, prev_k_b, prev_d_b)
-    signal_info["kd_source"] = data_source
-    
     info = {}
     try:
         info = ticker.info
@@ -510,6 +455,12 @@ def get_verified_stock_metrics(symbol: str, period: str = "3y") -> dict:
         pass
         
     stock_name = get_stock_name(formatted_symbol, info.get("shortName", ""))
+    
+    signal_info = get_kd_signal(
+        final_k, final_d, prev_k_b, prev_d_b,
+        symbol=formatted_symbol, name=stock_name, df=raw_df_clean
+    )
+    signal_info["kd_source"] = data_source
     
     # Volume calculation & momentum formatting (台股單位：張 = 股數 // 1000)
     volume_val = latest_raw.get('Volume', 0)
@@ -723,9 +674,6 @@ def fetch_stock_data(symbol_str: str, period: str = "1mo", refresh_time: float =
     except Exception:
         pass
 
-    signal_info = get_kd_signal(final_k, final_d, prev_k, prev_d)
-    signal_info["kd_source"] = "Yahoo官方源"
-
     # 取得名稱與成交量
     info = {}
     if t is not None:
@@ -734,6 +682,12 @@ def fetch_stock_data(symbol_str: str, period: str = "1mo", refresh_time: float =
         except Exception:
             pass
     stock_name = get_stock_name(target_sym, info.get("shortName", sym))
+
+    signal_info = get_kd_signal(
+        final_k, final_d, prev_k, prev_d,
+        symbol=target_sym, name=stock_name, df=df_clean
+    )
+    signal_info["kd_source"] = "Yahoo官方源"
 
     vol_val = latest_row.get("Volume", 0)
     latest_volume = int(vol_val) if (vol_val is not None and not pd.isna(vol_val)) else 0
