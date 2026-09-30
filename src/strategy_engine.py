@@ -603,3 +603,67 @@ def evaluate_dual_track_system(
         "suggested_ratio": track2["suggested_ratio"],
         "integrated_reason": integrated_reason
     }
+
+def screen_kd_extremes(
+    limit: int = 150,
+    expanded: bool = False,
+    custom_symbols: list = None
+) -> dict:
+    """
+    全市場 KD 極端值快速選股核心邏輯：
+    針對選定股票池，提取 Yahoo 官方最新 9K 與 9D 數值：
+    - 【極端超賣轉折組 (K > D 且 K < 20)】：
+      * 判定意涵：指標處於 20 以下極端超賣區，且已由下往上穿越 D 值（低檔金叉或轉強），具備跌深反彈與左側安全邊際。
+      * 標註：🟢【超賣區金叉 / 築底反轉】
+    - 【極端超買轉折組 (K < D 且 K > 80)】：
+      * 判定意涵：指標處於 80 以上極端超買區，且已跌破 D 值（高檔死叉），短線動能竭盡，拉回風險高。
+      * 標註：🔴【高檔死叉 / 超買警戒】
+    """
+    import time
+    from src.stock_data import fetch_popular_universe, fetch_batch_quotes_kd
+
+    t0 = time.time()
+    if custom_symbols:
+        universe = custom_symbols
+    else:
+        universe = fetch_popular_universe(limit=limit, expanded=expanded)
+
+    quotes = fetch_batch_quotes_kd(universe)
+
+    oversold_list = []
+    overbought_list = []
+
+    for q in quotes:
+        k = q.get("k", 50.0)
+        d = q.get("d", 50.0)
+
+        # 條件 1: 買方轉折區 (超賣金叉 / 築底)：K > D 且 K < 20
+        if k > d and k < 20.0:
+            item = dict(q)
+            item["tag"] = "🟢【超賣區金叉 / 築底反轉】"
+            item["condition"] = "K > D 且 K < 20"
+            item["meaning"] = "指標處於 20 以下極端超賣區，且已由下往上穿越 D 值（低檔金叉或轉強），具備跌深反彈與左側安全邊際。"
+            oversold_list.append(item)
+
+        # 條件 2: 賣方警戒區 (超買死叉 / 鈍化)：K < D 且 K > 80
+        elif k < d and k > 80.0:
+            item = dict(q)
+            item["tag"] = "🔴【高檔死叉 / 超買警戒】"
+            item["condition"] = "K < D 且 K > 80"
+            item["meaning"] = "指標處於 80 以上極端超買區，且已跌破 D 值（高檔死叉），短線動能竭盡，拉回風險高。"
+            overbought_list.append(item)
+
+    oversold_list.sort(key=lambda x: x["k"])
+    overbought_list.sort(key=lambda x: -x["k"])
+
+    elapsed = round(time.time() - t0, 2)
+
+    return {
+        "timestamp": time.time(),
+        "total_scanned": len(quotes),
+        "oversold": oversold_list,
+        "overbought": overbought_list,
+        "oversold_symbols": [s["symbol"] for s in oversold_list],
+        "overbought_symbols": [s["symbol"] for s in overbought_list],
+        "elapsed_seconds": elapsed
+    }

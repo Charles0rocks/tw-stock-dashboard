@@ -111,6 +111,41 @@
           <button type="button" onclick="setQuickStockList('2881, 2882')" class="px-2 py-0.5 rounded text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition-colors">金控股</button>
         </div>
       </div>
+
+      <!-- Yahoo 官方全市場 KD 極端值快速選股 -->
+      <div class="pt-3 border-t border-[#31333f]/60 space-y-2">
+        <div class="flex items-center justify-between">
+          <div class="text-[11px] font-bold text-amber-400 flex items-center gap-1">
+            <span>🎯</span> 全市場 KD 極端值選股
+          </div>
+          <label class="flex items-center gap-1 text-[10px] text-slate-400 cursor-pointer select-none" title="預設前 150 檔，勾選後擴大至 300 檔">
+            <input type="checkbox" id="expandScanCheckbox" class="rounded bg-slate-900 border-slate-700 text-cyan-500 focus:ring-0">
+            <span>擴大掃描</span>
+          </label>
+        </div>
+        <div class="space-y-1.5">
+          <button 
+            type="button" 
+            id="btnScreenerOversold"
+            onclick="triggerKdScreener('oversold')" 
+            class="w-full px-2.5 py-1.5 rounded-md text-[11px] font-bold bg-emerald-950/70 hover:bg-emerald-900/80 active:bg-emerald-800 text-emerald-300 border border-emerald-700/60 transition-all text-left flex items-center justify-between cursor-pointer shadow-sm"
+            title="買方轉折區（超賣金叉 / 築底）：K > D 且 K < 20"
+          >
+            <span class="flex items-center gap-1.5">🔘 一鍵篩選：K&gt;D &amp; K&lt;20</span>
+            <span class="px-1.5 py-0.5 rounded text-[9px] bg-emerald-900/80 text-emerald-200 border border-emerald-700/50">超賣轉強</span>
+          </button>
+          <button 
+            type="button" 
+            id="btnScreenerOverbought"
+            onclick="triggerKdScreener('overbought')" 
+            class="w-full px-2.5 py-1.5 rounded-md text-[11px] font-bold bg-rose-950/70 hover:bg-rose-900/80 active:bg-rose-800 text-rose-300 border border-rose-700/60 transition-all text-left flex items-center justify-between cursor-pointer shadow-sm"
+            title="賣方警戒區（超買死叉 / 鈍化）：K < D 且 K > 80"
+          >
+            <span class="flex items-center gap-1.5">🔘 一鍵篩選：K&lt;D &amp; K&gt;80</span>
+            <span class="px-1.5 py-0.5 rounded text-[9px] bg-rose-900/80 text-rose-200 border border-rose-700/50">超買警戒</span>
+          </button>
+        </div>
+      </div>
     </div>
 
     <div class="mt-auto pt-4 text-[10px] text-slate-500">
@@ -130,6 +165,21 @@
       <p class="text-xs text-slate-400">
         即時價量數據 | 9日 KD 技術指標 | ETF 折溢價比 / 個股本益比 | 24-48h 新聞 | AI 買賣評估
       </p>
+    </div>
+
+    <!-- Whole-Market KD Extremes Screener Scoreboard Banner -->
+    <div id="screenerScoreboardBanner" class="hidden p-3 rounded-lg bg-gradient-to-r from-[#141b26] to-[#1c1829] border border-cyan-800/60 shadow flex flex-col md:flex-row md:items-center justify-between gap-2 transition-all">
+      <div class="flex items-center gap-2 text-xs md:text-sm font-bold text-white flex-wrap">
+        <span class="text-base">🎯</span>
+        <span class="text-cyan-400 font-extrabold">【Yahoo 官方全市場 KD 極端值快速選股結果】</span>
+        <span class="text-slate-500 text-xs">｜</span>
+        <span id="scoreboardOversoldText" class="text-emerald-400 font-bold">🟢 符合超賣金叉：共 0 檔</span>
+        <span class="text-slate-500 text-xs">｜</span>
+        <span id="scoreboardOverboughtText" class="text-rose-400 font-bold">🔴 符合超買死叉：共 0 檔</span>
+      </div>
+      <div id="scoreboardPerfText" class="text-[11px] text-slate-400 font-mono">
+        ⚡ 掃描 0 檔 耗時 0 秒
+      </div>
     </div>
 
     <!-- 4 Summary Metric Cards (Exact Streamlit Match) -->
@@ -7701,7 +7751,110 @@
       renderAccordions();
     }
 
-    
+    let lastScreenerData = null;
+
+    async function triggerKdScreener(filterType) {
+      const isExpanded = document.getElementById('expandScanCheckbox')?.checked || false;
+      const btnOvs = document.getElementById('btnScreenerOversold');
+      const btnOvb = document.getElementById('btnScreenerOverbought');
+      const targetBtn = filterType === 'oversold' ? btnOvs : btnOvb;
+      const origHtml = targetBtn ? targetBtn.innerHTML : '';
+
+      if (targetBtn) {
+        targetBtn.disabled = true;
+        targetBtn.innerHTML = '<span class="inline-block animate-spin text-xs">⏳</span> <span class="text-[10px]">極速掃描中...</span>';
+      }
+
+      try {
+        let resData = null;
+        try {
+          const ctrl = new AbortController();
+          const tid = setTimeout(() => ctrl.abort(), 6500);
+          const resp = await fetch(`/api/screener?expanded=${isExpanded ? 'true' : 'false'}&t=${Date.now()}`, { signal: ctrl.signal });
+          clearTimeout(tid);
+          if (resp.ok) {
+            resData = await resp.json();
+          }
+        } catch (e) {
+          console.warn('API /api/screener unavailable, using client fallback:', e);
+        }
+
+        // Fallback if API unreachable
+        if (!resData || (!resData.oversold && !resData.overbought)) {
+          const ovs = [];
+          const ovb = [];
+          for (const s of ALL_STOCKS) {
+            if (typeof s.k === 'number' && typeof s.d === 'number') {
+              if (s.k > s.d && s.k < 20) {
+                ovs.push({ ...s, tag: '🟢【超賣區金叉 / 築底反轉】' });
+              } else if (s.k < s.d && s.k > 80) {
+                ovb.push({ ...s, tag: '🔴【高檔死叉 / 超買警戒】' });
+              }
+            }
+          }
+          resData = {
+            total_scanned: ALL_STOCKS.length,
+            oversold: ovs,
+            overbought: ovb,
+            oversold_symbols: ovs.map(s => s.symbol),
+            overbought_symbols: ovb.map(s => s.symbol),
+            elapsed_seconds: 0.05
+          };
+        }
+
+        lastScreenerData = resData;
+
+        // Register any newly found stocks into ALL_STOCKS
+        const allFound = [...(resData.oversold || []), ...(resData.overbought || [])];
+        for (const fs of allFound) {
+          const existingIdx = ALL_STOCKS.findIndex(s => s.symbol === fs.symbol || normalizeSymbol(s.symbol) === normalizeSymbol(fs.symbol));
+          if (existingIdx >= 0) {
+            ALL_STOCKS[existingIdx].k = fs.k;
+            ALL_STOCKS[existingIdx].d = fs.d;
+            ALL_STOCKS[existingIdx].latest_close = fs.latest_close || ALL_STOCKS[existingIdx].latest_close;
+            ALL_STOCKS[existingIdx].change_pct = fs.change_pct ?? ALL_STOCKS[existingIdx].change_pct;
+            ALL_STOCKS[existingIdx].strategy_state = fs.tag || ALL_STOCKS[existingIdx].strategy_state;
+          }
+        }
+
+        // Update Scoreboard Banner
+        const ovsList = resData.oversold || [];
+        const ovbList = resData.overbought || [];
+        const bannerEl = document.getElementById('screenerScoreboardBanner');
+        const txtOvs = document.getElementById('scoreboardOversoldText');
+        const txtOvb = document.getElementById('scoreboardOverboughtText');
+        const txtPerf = document.getElementById('scoreboardPerfText');
+
+        if (bannerEl) bannerEl.classList.remove('hidden');
+        if (txtOvs) txtOvs.textContent = `🟢 符合超賣金叉：共 ${ovsList.length} 檔`;
+        if (txtOvb) txtOvb.textContent = `🔴 符合超買死叉：共 ${ovbList.length} 檔`;
+        if (txtPerf) txtPerf.textContent = `⚡ 掃描 ${resData.total_scanned || 0} 檔 耗時 ${resData.elapsed_seconds || 0} 秒`;
+
+        const targetSyms = filterType === 'oversold' ? (resData.oversold_symbols || ovsList.map(s => s.symbol)) : (resData.overbought_symbols || ovbList.map(s => s.symbol));
+        const filterName = filterType === 'oversold' ? '【K>D 且 K<20 (超賣轉強)】' : '【K<D 且 K>80 (超買警戒)】';
+
+        if (targetSyms && targetSyms.length > 0) {
+          const inputEl = document.getElementById('stockInputArea');
+          if (inputEl) {
+            inputEl.value = targetSyms.join(', ');
+            inputEl.classList.remove('text-slate-500');
+            inputEl.classList.add('text-white');
+          }
+          await handleStockSubmit();
+        } else {
+          alert(`目前全市場活躍標的無符合 ${filterName} 此極端條件者。`);
+        }
+      } catch (err) {
+        console.error('Screener error:', err);
+        alert('選股執行失敗，請檢查網路連線後重試。');
+      } finally {
+        if (targetBtn) {
+          targetBtn.disabled = false;
+          targetBtn.innerHTML = origHtml;
+        }
+      }
+    }
+
     let isMarketIndexOpen = true;
     function toggleMarketIndex() {
       const contentEl = document.getElementById('marketContent');

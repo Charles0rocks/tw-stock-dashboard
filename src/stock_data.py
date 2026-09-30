@@ -945,3 +945,145 @@ def fetch_market_index_data(symbol: str = "^TWII", refresh_time: float = None) -
         "latest": records[-1] if records else {}
     }
 
+# 核心權值與主流高流動性成分股備援池（涵蓋台灣50、中型100與熱門ETF）
+CORE_UNIVERSE = [
+    # 台灣 50 / 電子權值股
+    "2330.TW", "2317.TW", "2454.TW", "2308.TW", "2881.TW", "2882.TW", "2382.TW", "3231.TW",
+    "2357.TW", "2301.TW", "2002.TW", "6669.TW", "2409.TW", "2356.TW", "3034.TW", "2603.TW",
+    "2609.TW", "2615.TW", "2303.TW", "2891.TW", "2884.TW", "2886.TW", "2892.TW", "2880.TW",
+    "2395.TW", "3711.TW", "2345.TW", "3037.TW", "2376.TW", "2377.TW", "4938.TW", "2324.TW",
+    "3605.TW", "3481.TW", "2404.TW", "2885.TW", "2883.TW", "2890.TW", "5880.TW", "2887.TW",
+    "1301.TW", "1303.TW", "1326.TW", "6505.TW", "1101.TW", "1102.TW", "1216.TW", "2912.TW",
+    "9910.TW", "9904.TW", "1519.TW", "1513.TW", "1504.TW", "1503.TW", "2618.TW", "2610.TW",
+    # 熱門高息 / 債券 / 主題 ETF
+    "0050.TW", "0056.TW", "00878.TW", "00919.TW", "00929.TW", "00940.TW", "00918.TW",
+    "00713.TW", "00939.TW", "00720B.TWO", "00679B.TW", "00687B.TWO", "00937B.TWO", "00724B.TWO"
+]
+
+def fetch_popular_universe(limit: int = 150, expanded: bool = False) -> list:
+    """
+    高效取得市場活躍股票池（預設前 150 檔權值與熱門成交股，支援擴大至 300 檔）
+    """
+    import urllib.request, re, json
+    symbols = []
+    seen = set()
+
+    def add_sym(s):
+        if not s: return
+        s = s.strip().upper()
+        if s not in seen:
+            seen.add(s)
+            symbols.append(s)
+
+    # 1. 優先向 Yahoo 股市官方排行抓取當日成交量前 100 檔
+    exchanges = ["TAI", "TWO"] if (expanded or limit > 100) else ["TAI"]
+    for ex in exchanges:
+        try:
+            url = f"https://tw.stock.yahoo.com/rank/volume?exchange={ex}"
+            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
+            with urllib.request.urlopen(req, timeout=4) as resp:
+                html = resp.read().decode('utf-8')
+                idx = html.find('root.App.main = ')
+                if idx != -1:
+                    sub = html[idx + len('root.App.main = '):]
+                    sub = re.sub(r'\bundefined\b', 'null', sub)
+                    obj, _ = json.JSONDecoder().raw_decode(sub)
+                    raw_list = obj.get('context', {}).get('dispatcher', {}).get('stores', {}).get('TableStore', {}).get('main-0-StockRanking', {}).get('list', [])
+                    for item in raw_list:
+                        if 'symbol' in item:
+                            add_sym(item['symbol'])
+        except Exception:
+            pass
+
+    # 2. 合併核心指數與主流權值成分股，確保重要標的齊全
+    for s in CORE_UNIVERSE:
+        add_sym(s)
+
+    target_limit = 300 if expanded else limit
+    return symbols[:target_limit]
+
+def fetch_batch_quotes_kd(symbols_list: list, timeout: float = 6.0) -> list:
+    """
+    將代碼清單切為每批 50 檔，以 FinanceChartService.ApacLibraCharts 發送高效批次請求
+    迅速計算每檔個股官方 9,3,3 KD 與現價、成交量。
+    """
+    import urllib.request, urllib.parse, json
+    if not symbols_list:
+        return []
+
+    all_results = []
+    chunk_size = 50
+
+    for i in range(0, len(symbols_list), chunk_size):
+        chunk = symbols_list[i : i + chunk_size]
+        sym_json = json.dumps(chunk)
+        url = f"https://tw.stock.yahoo.com/_td-stock/api/resource/FinanceChartService.ApacLibraCharts;period=d;symbols={urllib.parse.quote(sym_json)}"
+        try:
+            req = urllib.request.Request(url, headers={
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+                'Referer': 'https://tw.stock.yahoo.com/'
+            })
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                data = json.loads(resp.read().decode('utf-8'))
+                for item in data:
+                    c = item.get("chart", {})
+                    meta = c.get("meta", {})
+                    sym = meta.get("symbol")
+                    if not sym:
+                        continue
+                    ind = c.get("indicators", {}).get("quote", [{}])[0]
+                    highs = [h for h in ind.get("high", []) if h is not None]
+                    lows = [l for l in ind.get("low", []) if l is not None]
+                    closes = [cl for cl in ind.get("close", []) if cl is not None]
+                    vols = [v for v in ind.get("volume", []) if v is not None]
+
+                    if len(closes) < 9:
+                        continue
+
+                    # 快速計算標準台式 KD (9, 3, 3) 遞迴
+                    k_val, d_val = 50.0, 50.0
+                    prev_k_val, prev_d_val = 50.0, 50.0
+                    for idx in range(8, len(closes)):
+                        prev_k_val, prev_d_val = k_val, d_val
+                        h_max = max(highs[idx - 8 : idx + 1])
+                        l_min = min(lows[idx - 8 : idx + 1])
+                        diff_hl = h_max - l_min
+                        rsv = 50.0 if diff_hl == 0 else ((closes[idx] - l_min) / diff_hl) * 100.0
+                        rsv = max(0.0, min(100.0, rsv))
+                        k_val = (2.0 / 3.0) * k_val + (1.0 / 3.0) * rsv
+                        d_val = (2.0 / 3.0) * d_val + (1.0 / 3.0) * k_val
+
+                    latest_k = round(k_val, 1)
+                    latest_d = round(d_val, 1)
+                    prev_k = round(prev_k_val, 1)
+                    prev_d = round(prev_d_val, 1)
+
+                    latest_price = meta.get("regularMarketPrice") or closes[-1]
+                    prev_close = meta.get("previousClose") or (closes[-2] if len(closes) > 1 else latest_price)
+                    change_val = round(latest_price - prev_close, 2)
+                    change_pct = round((change_val / prev_close) * 100.0, 2) if prev_close > 0 else 0.0
+                    base_code = sym.split(".")[0]
+                    name = STOCK_NAME_MAP.get(sym) or STOCK_NAME_MAP.get(base_code) or meta.get("name") or meta.get("shortName") or sym
+                    if name != sym:
+                        STOCK_NAME_MAP[sym] = name
+                        STOCK_NAME_MAP[base_code] = name
+                    vol_lots = int(vols[-1] // 1000) if vols else 0
+
+                    all_results.append({
+                        "symbol": sym,
+                        "name": name,
+                        "latest_close": round(float(latest_price), 2),
+                        "change_pct": change_pct,
+                        "k": latest_k,
+                        "d": latest_d,
+                        "prev_k": prev_k,
+                        "prev_d": prev_d,
+                        "volume_lots": vol_lots,
+                        "volume_display": f"{vol_lots:,} 張",
+                        "df": None
+                    })
+        except Exception:
+            pass
+
+    return all_results
+

@@ -20,6 +20,7 @@ from src.etf_nav import get_valuation_or_nav
 from src.news_fetcher import fetch_stock_news
 from src.file_parser import parse_uploaded_file
 from src.ai_analyzer import analyze_stock_with_ai
+from src.strategy_engine import screen_kd_extremes
 
 # Set page config
 st.set_page_config(
@@ -215,6 +216,52 @@ if "refresh_counter" not in st.session_state:
 # Sidebar Layout
 st.sidebar.title("📊 儀表板控制台")
 
+# --- Yahoo 官方全市場 KD 極端值快速選股 ---
+st.sidebar.markdown("### 🎯 全市場 KD 極端值快速選股")
+st.sidebar.caption("Yahoo 官方端點即時篩選，響應時間 < 3 秒")
+
+expand_scan = st.sidebar.checkbox(
+    "🔍 擴大掃描 (300檔)",
+    value=False,
+    help="預設掃描前 150 檔權值與熱門股，勾選後擴大掃描至上市櫃前 300 檔"
+)
+
+btn_oversold = st.sidebar.button(
+    "🔘 一鍵篩選：K>D & K<20 (超賣轉強)",
+    key="btn_oversold_kd",
+    use_container_width=True,
+    help="買方轉折區（超賣金叉 / 築底）：K > D 且 K < 20"
+)
+
+btn_overbought = st.sidebar.button(
+    "🔘 一鍵篩選：K<D & K>80 (超買警戒)",
+    key="btn_overbought_kd",
+    use_container_width=True,
+    help="賣方警戒區（超買死叉 / 鈍化）：K < D 且 K > 80"
+)
+
+screener_triggered = False
+if btn_oversold or btn_overbought:
+    with st.spinner("⚡ 正在極速掃描全市場 KD 極端值標的..."):
+        scan_limit = 300 if expand_scan else 150
+        s_res = screen_kd_extremes(limit=scan_limit, expanded=expand_scan)
+        st.session_state["last_screener_result"] = s_res
+        
+        target_syms = s_res["oversold_symbols"] if btn_oversold else s_res["overbought_symbols"]
+        filter_label = "超賣轉強 (K>D & K<20)" if btn_oversold else "超買警戒 (K<D & K>80)"
+        
+        if target_syms:
+            st.session_state["last_stock_input"] = ", ".join(target_syms)
+            st.session_state["screener_msg"] = f"已為您篩選出 {len(target_syms)} 檔符合【{filter_label}】標的並帶入分析！"
+            st.cache_data.clear()
+            st.session_state["last_refresh_time"] = time.time()
+            st.session_state["refresh_counter"] = st.session_state.get("refresh_counter", 0) + 1
+            st.rerun()
+        else:
+            st.sidebar.warning(f"目前全市場活躍標的無符合【{filter_label}】此極端條件者。")
+
+st.sidebar.markdown("---")
+
 # Stock Input Box inside Form (pressing Enter inside text input natively triggers form submit)
 with st.sidebar.form(key="stock_search_form", clear_on_submit=False):
     stock_input = st.text_area(
@@ -270,6 +317,25 @@ if uploaded_file is not None:
 # Main Header
 st.title("📈 台股Dashboard")
 st.caption(f"即時價量數據 | 9日 KD 技術指標 | ETF 折溢價比 / 個股本益比 | 24-48H 新聞 | AI 買賣評估 (最後同步：{sync_time_str})")
+
+# Toast notification for screener
+if "screener_msg" in st.session_state:
+    st.toast(st.session_state["screener_msg"], icon="🎯")
+    del st.session_state["screener_msg"]
+
+# Screener Scoreboard Display (if screener was run)
+if "last_screener_result" in st.session_state:
+    s_res = st.session_state["last_screener_result"]
+    ovs = s_res.get("oversold", [])
+    ovb = s_res.get("overbought", [])
+    scanned = s_res.get("total_scanned", 0)
+    elapsed = s_res.get("elapsed_seconds", 0)
+    st.info(
+        f"🎯 **【Yahoo 官方全市場 KD 極端值快速選股計分板】**　"
+        f"🟢 **符合超賣金叉 (K>D 且 K<20)：共 {len(ovs)} 檔** ｜ "
+        f"🔴 **符合超買死叉 (K<D 且 K>80)：共 {len(ovb)} 檔**　"
+        f"*(⚡ 掃描 {scanned} 檔活躍標的，耗時 {elapsed} 秒)*"
+    )
 
 # Parse Stock List with robust splitting for half/fullwidth comma and spaces
 raw_symbols = [s.strip().upper() for s in re.split(r'[,，\s]+', stock_input) if s.strip()]
